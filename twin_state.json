@@ -1,0 +1,50 @@
+{
+  "profile": {
+    "name": "Alex Chen",
+    "role": "3rd Year Computer Science Student",
+    "exam_priority_weight": 0.55,
+    "assignment_certainty_weight": 0.75,
+    "risk_tolerance": 0.4,
+    "prediction_confidence": 0.91,
+    "daily_study_capacity_hours": 6.0,
+    "preferred_study_hours": "19:00 - 01:00 (Night Owl)",
+    "current_fatigue_level": 35,
+    "high_stakes_bias": 0.75,
+    "fatigue_sensitivity": 0.7,
+    "night_owl_factor": 0.85,
+    "target_sleep_hours": 7.0,
+    "min_sleep_threshold": 5.0
+  },
+  "tasks": [
+    {
+      "id": "exam_ml",
+      "title": "Machine Learning Exam",
+      "type": "Exam",
+      "days_remaining": 3.0,
+      "weight_percent": 45,
+      "prep_hours_needed": 14.0,
+      "current_readiness": "Medium (50%)"
+    },
+    {
+      "id": "assign_dbms",
+      "title": "DBMS Assignment",
+      "type": "Assignment",
+      "days_remaining": 2.0,
+      "weight_percent": 15,
+      "prep_hours_needed": 7.0,
+      "current_readiness": "Low (25%)"
+    }
+  ],
+  "permissions": {
+    "academic_calendar": true,
+    "sleep_biometrics": true,
+    "personal_notes": false
+  },
+  "history": [
+    {
+      "timestamp": "2026-09-30 13:12:36",
+      "user_decision": "I'll finish the assignment first",
+      "effect": "Digital Twin Recalibrated: Learned from your override. Assignment Certainty increased from 50% -> 75%. Future recommendations will prioritize deadline safety."
+    }
+  ]
+}

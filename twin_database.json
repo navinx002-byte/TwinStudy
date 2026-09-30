@@ -1,0 +1,959 @@
+{
+  "user": {
+    "name": "Navin",
+    "email": "navin.x002@gmail.com",
+    "dob": "2022-11-25",
+    "age": 3,
+    "role": "student_minor",
+    "role_display": "Student (Minor)",
+    "grade_level": "Computer Science Engineering (Semester 4)",
+    "goals": [
+      "Build strong study discipline",
+      "Submit coursework with verified proof",
+      "Achieve target semester GPA"
+    ],
+    "daily_study_hours": 4.0,
+    "preferred_study_time": "Evening",
+    "learning_preference": "Practice problems and step-by-step review",
+    "focus_duration_minutes": 45,
+    "points": 200,
+    "current_tier": "Starter (Tier 1)",
+    "streak_days": 2,
+    "college": "VTU College",
+    "is_minor": true,
+    "guardian_email": "apex88266@gmail.com",
+    "linking_code": "TS-LINK-8921"
+  },
+  "registered_users": {
+    "navinnavi8431@gmail.com": {
+      "name": "Navin",
+      "dob": "2022-11-25",
+      "age": 3,
+      "is_minor": true,
+      "email": "navinnavi8431@gmail.com",
+      "phone": "+91 9876543210",
+      "password": "password123",
+      "registered_at": "2026-09-30T16:29:57.971563",
+      "academic_profile": {
+        "academic_year": "2026-2028",
+        "college": "VTU College",
+        "course": "Computer Science Engineering",
+        "semester": "Semester 4",
+        "specialization": "cs",
+        "student_name": "Navin"
+      },
+      "subjects": [
+        {
+          "code": "DV4523",
+          "color": "#00C4CC",
+          "credits": "",
+          "id": "s_1790768668419",
+          "name": "DCN",
+          "room": "hg",
+          "teacher": "hggsda",
+          "type": "Lecture"
+        },
+        {
+          "code": "wr",
+          "color": "#8B5CF6",
+          "credits": "",
+          "id": "s_1790768678946",
+          "name": "ge",
+          "room": "rw",
+          "teacher": "w",
+          "type": "Lecture"
+        },
+        {
+          "code": "erh",
+          "color": "#14B8A6",
+          "credits": "",
+          "id": "s_1790768703026",
+          "name": "erj",
+          "room": "ty",
+          "teacher": "234",
+          "type": "Lecture"
+        }
+      ],
+      "classes": [
+        {
+          "color": "#00C4CC",
+          "day": "Monday",
+          "end_time": "11:30",
+          "id": "c_1790768728250",
+          "room": "hg",
+          "start_time": "10:00",
+          "subject": "DCN",
+          "subject_id": "s_1790768668419",
+          "teacher": "hggsda",
+          "time": "10:00 AM - 11:30 AM",
+          "type": "Lecture",
+          "week_type": "All"
+        },
+        {
+          "id": "c_1790768744250",
+          "subject_id": "s_1790768703026",
+          "subject": "erj",
+          "day": "Thursday",
+          "start_time": "10:00",
+          "end_time": "11:30",
+          "time": "10:00 AM - 11:30 AM",
+          "teacher": "234",
+          "room": "ty",
+          "type": "Lecture",
+          "color": "#14B8A6",
+          "week_type": "All"
+        },
+        {
+          "id": "c_1790768753960",
+          "subject_id": "s_1790768678946",
+          "subject": "ge",
+          "day": "Friday",
+          "start_time": "10:00",
+          "end_time": "11:30",
+          "time": "10:00 AM - 11:30 AM",
+          "teacher": "w",
+          "room": "rw",
+          "type": "Lecture",
+          "color": "#8B5CF6",
+          "week_type": "All"
+        }
+      ],
+      "role": "student"
+    },
+    "8660635584": {
+      "name": "Adarsh",
+      "dob": "2004-10-27",
+      "age": 21,
+      "is_minor": false,
+      "phone": "8660635584",
+      "email": "8660635584@twinstudy.local",
+      "password": "Adarsh",
+      "registered_at": "2026-09-30T16:20:48.460403",
+      "academic_profile": null,
+      "subjects": [],
+      "classes": []
+    },
+    "9876543210": {
+      "name": "Adarsh",
+      "dob": "2002-05-15",
+      "age": 24,
+      "is_minor": false,
+      "email": "navinnavi8431@gmail.com",
+      "phone": "+91 9876543210",
+      "password": "password123",
+      "registered_at": "2026-09-30T16:29:57.971563",
+      "academic_profile": null,
+      "subjects": [],
+      "classes": []
+    },
+    "adarshsk5592@gmail.com": {
+      "name": "Adarsh S K",
+      "dob": "2003-09-14",
+      "age": 21,
+      "is_minor": false,
+      "email": "adarshsk5592@gmail.com",
+      "password": "Password@123",
+      "registered_at": "2026-09-30T18:01:47.626615"
+    },
+    "navin.x002@gmail.com": {
+      "name": "Navin",
+      "dob": "2022-11-25",
+      "age": 3,
+      "is_minor": true,
+      "email": "navin.x002@gmail.com",
+      "password": "2222",
+      "registered_at": "2026-09-30T18:29:56.209004",
+      "academic_profile": {
+        "academic_year": "2026-2028",
+        "college": "VTU College",
+        "course": "Computer Science Engineering",
+        "semester": "Semester 4",
+        "specialization": "cs",
+        "student_name": "Navin"
+      },
+      "subjects": [
+        {
+          "code": "DV4523",
+          "color": "#00C4CC",
+          "credits": "",
+          "id": "s_1790768668419",
+          "name": "DCN",
+          "room": "hg",
+          "teacher": "hggsda",
+          "type": "Lecture"
+        },
+        {
+          "code": "wr",
+          "color": "#8B5CF6",
+          "credits": "",
+          "id": "s_1790768678946",
+          "name": "ge",
+          "room": "rw",
+          "teacher": "w",
+          "type": "Lecture"
+        },
+        {
+          "code": "erh",
+          "color": "#14B8A6",
+          "credits": "",
+          "id": "s_1790768703026",
+          "name": "erj",
+          "room": "ty",
+          "teacher": "234",
+          "type": "Lecture"
+        },
+        {
+          "name": "python",
+          "code": "py005",
+          "teacher": "sowmya",
+          "room": "67",
+          "credits": "",
+          "color": "#3B82F6",
+          "type": "Lecture",
+          "id": "s_1790774845361"
+        }
+      ],
+      "classes": [
+        {
+          "color": "#00C4CC",
+          "day": "Monday",
+          "end_time": "11:30",
+          "id": "c_1790768728250",
+          "room": "hg",
+          "start_time": "10:00",
+          "subject": "DCN",
+          "subject_id": "s_1790768668419",
+          "teacher": "hggsda",
+          "time": "10:00 AM - 11:30 AM",
+          "type": "Lecture",
+          "week_type": "All"
+        },
+        {
+          "color": "#14B8A6",
+          "day": "Thursday",
+          "end_time": "11:30",
+          "id": "c_1790768744250",
+          "room": "ty",
+          "start_time": "10:00",
+          "subject": "erj",
+          "subject_id": "s_1790768703026",
+          "teacher": "234",
+          "time": "10:00 AM - 11:30 AM",
+          "type": "Lecture",
+          "week_type": "All"
+        },
+        {
+          "color": "#8B5CF6",
+          "day": "Friday",
+          "end_time": "11:30",
+          "id": "c_1790768753960",
+          "room": "rw",
+          "start_time": "10:00",
+          "subject": "ge",
+          "subject_id": "s_1790768678946",
+          "teacher": "w",
+          "time": "10:00 AM - 11:30 AM",
+          "type": "Lecture",
+          "week_type": "All"
+        }
+      ]
+    },
+    "parent.suresh@gmail.com": {
+      "name": "Mr. Suresh Sharma",
+      "email": "parent.suresh@gmail.com",
+      "password": "password123",
+      "role": "parent",
+      "linked_student_email": "navinnavi8431@gmail.com",
+      "registered_at": "2026-09-30T19:37:22.383843"
+    },
+    "navin.d2942@gmail.com": {
+      "name": "akash",
+      "email": "navin.d2942@gmail.com",
+      "password": "1111",
+      "role": "parent",
+      "role_display": "Parent / Guardian",
+      "registered_at": "2026-09-30T20:01:11.454029",
+      "linked_student_email": null
+    },
+    "apex88266@gmail.com": {
+      "name": "akash",
+      "email": "apex88266@gmail.com",
+      "password": "1111",
+      "role": "parent",
+      "role_display": "Parent / Guardian",
+      "registered_at": "2026-09-30T21:09:32.494698",
+      "linked_student_email": "navin.x002@gmail.com"
+    }
+  },
+  "academic_profile": {
+    "academic_year": "2026-2028",
+    "college": "VTU College",
+    "course": "Computer Science Engineering",
+    "semester": "Semester 4",
+    "specialization": "cs",
+    "student_name": "Navin"
+  },
+  "subjects": [
+    {
+      "code": "DV4523",
+      "color": "#00C4CC",
+      "credits": "",
+      "id": "s_1790768668419",
+      "name": "DCN",
+      "room": "hg",
+      "teacher": "hggsda",
+      "type": "Lecture"
+    },
+    {
+      "code": "wr",
+      "color": "#8B5CF6",
+      "credits": "",
+      "id": "s_1790768678946",
+      "name": "ge",
+      "room": "rw",
+      "teacher": "w",
+      "type": "Lecture"
+    },
+    {
+      "code": "erh",
+      "color": "#14B8A6",
+      "credits": "",
+      "id": "s_1790768703026",
+      "name": "erj",
+      "room": "ty",
+      "teacher": "234",
+      "type": "Lecture"
+    },
+    {
+      "name": "python",
+      "code": "py005",
+      "teacher": "sowmya",
+      "room": "67",
+      "credits": "",
+      "color": "#3B82F6",
+      "type": "Lecture",
+      "id": "s_1790774845361"
+    }
+  ],
+  "classes": [
+    {
+      "color": "#00C4CC",
+      "day": "Monday",
+      "end_time": "11:30",
+      "id": "c_1790768728250",
+      "room": "hg",
+      "start_time": "10:00",
+      "subject": "DCN",
+      "subject_id": "s_1790768668419",
+      "teacher": "hggsda",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    },
+    {
+      "color": "#14B8A6",
+      "day": "Thursday",
+      "end_time": "11:30",
+      "id": "c_1790768744250",
+      "room": "ty",
+      "start_time": "10:00",
+      "subject": "erj",
+      "subject_id": "s_1790768703026",
+      "teacher": "234",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    },
+    {
+      "color": "#8B5CF6",
+      "day": "Friday",
+      "end_time": "11:30",
+      "id": "c_1790768753960",
+      "room": "rw",
+      "start_time": "10:00",
+      "subject": "ge",
+      "subject_id": "s_1790768678946",
+      "teacher": "w",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t_1",
+      "subject": "DCN",
+      "subject_color": "#00C4CC",
+      "title": "Complete DCN Problem Set & Module Review",
+      "type": "Assignment",
+      "due": "In 2 days",
+      "due_date": "2026-10-02",
+      "points": 100,
+      "status": "Verified & Done",
+      "verified": true,
+      "points_reward": 100,
+      "proof_status": "verified",
+      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+      "priority": "Critical",
+      "estimated_effort_hours": 2.5
+    },
+    {
+      "id": "t_2",
+      "subject": "ge",
+      "subject_color": "#8B5CF6",
+      "title": "Complete ge Problem Set & Module Review",
+      "type": "Lab Practical",
+      "due": "In 3 days",
+      "due_date": "2026-10-03",
+      "points": 125,
+      "status": "Pending",
+      "verified": false,
+      "points_reward": 125,
+      "proof_status": "pending",
+      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+      "priority": "High",
+      "estimated_effort_hours": 3.0
+    },
+    {
+      "id": "t_3",
+      "subject": "erj",
+      "subject_color": "#14B8A6",
+      "title": "Complete erj Problem Set & Module Review",
+      "type": "Assignment",
+      "due": "In 4 days",
+      "due_date": "2026-10-04",
+      "points": 150,
+      "status": "Pending",
+      "verified": false,
+      "points_reward": 150,
+      "proof_status": "pending",
+      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+      "priority": "High",
+      "estimated_effort_hours": 3.5
+    },
+    {
+      "id": "t_4",
+      "subject": "python",
+      "subject_color": "#3B82F6",
+      "title": "Complete python Problem Set & Module Review",
+      "type": "Lab Practical",
+      "due": "In 5 days",
+      "due_date": "2026-10-05",
+      "points": 175,
+      "status": "Pending",
+      "verified": false,
+      "points_reward": 175,
+      "proof_status": "pending",
+      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+      "priority": "High",
+      "estimated_effort_hours": 4.0
+    }
+  ],
+  "twin_status": {
+    "status": "Learning & Verifying",
+    "personalization_level": 82,
+    "decisions_learned_count": 14,
+    "current_confidence": 85,
+    "proof_accuracy_rate": 96
+  },
+  "cognitive_weights": {
+    "exam_priority_weight": 0.72,
+    "assignment_certainty_weight": 0.48,
+    "risk_tolerance": 0.65,
+    "fatigue_decay_sensitivity": 0.68
+  },
+  "current_context": {
+    "today_available_hours": 6.0,
+    "two_day_window_hours": 12.0,
+    "current_fatigue": 35,
+    "workload_level": "Active Semester"
+  },
+  "learned_patterns": [
+    {
+      "id": "p1",
+      "title": "Postpones Homework For High-Weight Exams",
+      "description": "Student historically delays assignments to focus on exam prep, risking late penalties (-10% average).",
+      "confidence": 88,
+      "action": "Twin advises locking in guaranteed assignment marks first before open-ended exam revision."
+    },
+    {
+      "id": "p2",
+      "title": "Peak Analytical Stamina: Evening Study Hours",
+      "description": "Retention is 3.2x higher during evening study blocks compared to morning lectures.",
+      "confidence": 92,
+      "action": "Schedule complex problem sets and lab work in evening hours."
+    }
+  ],
+  "past_mistakes": [
+    {
+      "date": "2026-08-20",
+      "dilemma": "Crammed for exam and skipped homework submission deadline.",
+      "outcome": "Scored well on exam, but lost guaranteed marks due to late homework deduction.",
+      "rule_learned": "Never sacrifice guaranteed assignment marks for marginal exam score gains."
+    }
+  ],
+  "scoreboard": {
+    "tiers": [
+      {
+        "tier": "Starter",
+        "min_pts": 0,
+        "unlocked": true,
+        "perk": "Core What-If Engine & Timetable"
+      },
+      {
+        "tier": "Builder (Level 2)",
+        "min_pts": 300,
+        "unlocked": true,
+        "perk": "Proof Uploads & Multi-Scenario Sim"
+      },
+      {
+        "tier": "Achiever (Level 3)",
+        "min_pts": 600,
+        "unlocked": false,
+        "perk": "Past-vs-Present Comparative Analytics"
+      },
+      {
+        "tier": "Champion (Level 4)",
+        "min_pts": 1000,
+        "unlocked": false,
+        "perk": "Autonomous Schedule Optimizer"
+      }
+    ]
+  },
+  "decision_history": [],
+  "study_telemetry": {
+    "total_focus_minutes_today": 90,
+    "stamina_score": 92,
+    "fatigue_decay": 28,
+    "sessions_completed_today": 2,
+    "history": [
+      {
+        "date": "Today",
+        "duration_minutes": 45,
+        "subject": "General Study",
+        "stamina": 94
+      },
+      {
+        "date": "Today",
+        "duration_minutes": 45,
+        "subject": "Coursework",
+        "stamina": 90
+      }
+    ]
+  },
+  "parent_controls": {
+    "guardian_name": "Mr. Suresh (Guardian)",
+    "guardian_email": "apex88266@gmail.com",
+    "weekly_study_goal_hours": 25.0,
+    "teacher_academic_visibility": true,
+    "effort_reward_unlocks": true,
+    "study_telemetry_sharing": true,
+    "night_study_alert_threshold": "11:00 PM"
+  },
+  "notifications": [
+    {
+      "id": "notif_1790783777422",
+      "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
+      "description": "AI verified your upload and teach-back quiz with 96% conceptual accuracy.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "notif_1790773196209",
+      "title": "Welcome to TwinStudy! 🎓",
+      "description": "Your account is verified. Complete your MyStudyLife timetable setup to personalize your twin.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "notif_1790771507626",
+      "title": "Welcome to TwinStudy! 🎓",
+      "description": "Your account is verified. Complete your MyStudyLife timetable setup to personalize your twin.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "n_4",
+      "title": "Proof Verified (+150 pts)",
+      "description": "Verified 'Decision_Trees_Lab_Evidence.pdf' with quiz score 3/3.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "n1",
+      "title": "Upcoming Submission Due",
+      "description": "DBMS Assignment submission window closes in 48 hours.",
+      "time": "2 hours ago",
+      "type": "warning",
+      "read": false
+    },
+    {
+      "id": "n2",
+      "title": "5-Day Streak Maintained",
+      "description": "Consistent evening focus logged. +50 bonus points awarded!",
+      "time": "5 hours ago",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "n3",
+      "title": "Focus Telemetry Optimal",
+      "description": "Your 45-minute focus session showed 92% cognitive stamina retention.",
+      "time": "1 day ago",
+      "type": "info",
+      "read": true
+    }
+  ],
+  "behavior_patterns": [
+    {
+      "id": "bp_1",
+      "title": "Postpones Homework For High-Weight Exams",
+      "pattern_type": "prioritization",
+      "confidence": 88.5,
+      "evidence_count": 14,
+      "evidence_summary": "Student historically delays assignments to focus on exam prep, risking late penalties (-10% average).",
+      "weight": 1.35,
+      "is_active": true
+    },
+    {
+      "id": "bp_2",
+      "title": "Peak Analytical Retention: Evening Hours",
+      "pattern_type": "productivity",
+      "confidence": 92.0,
+      "evidence_count": 22,
+      "evidence_summary": "Problem set completion speed is 3.2x faster between 7 PM - 11 PM with lower distraction triggers.",
+      "weight": 1.4,
+      "is_active": true
+    },
+    {
+      "id": "bp_3",
+      "title": "Last-Minute Submission Fatigue Spikes",
+      "pattern_type": "deadline_habit",
+      "confidence": 79.0,
+      "evidence_count": 9,
+      "evidence_summary": "Submissions completed within 3 hours of deadline show a 24% drop in quiz verification scores.",
+      "weight": 1.2,
+      "is_active": true
+    },
+    {
+      "id": "bp_4",
+      "title": "Stamina Drop-off After 75 Minutes Continuous Focus",
+      "pattern_type": "fatigue",
+      "confidence": 85.0,
+      "evidence_count": 18,
+      "evidence_summary": "Telemetry logs show cognitive degradation increases steeply after 75m without a 10m recharge interval.",
+      "weight": 1.15,
+      "is_active": true
+    }
+  ],
+  "decisions": [
+    {
+      "id": "dec_1790775942433",
+      "timestamp": "2026-09-30T19:15:42.433450",
+      "question": "What if I study in 45 min blocks?",
+      "recommended_scenario": "Sprint study strategy",
+      "chosen_scenario": "Sprint study strategy",
+      "user_reason": "Accepted Twin recommendation",
+      "is_disagreement": false,
+      "actual_outcome": "Followed 45 min blocks and completed task ahead of time",
+      "outcome_rating": 5,
+      "outcome_feedback": "Twin was 100% accurate, low fatigue"
+    },
+    {
+      "id": "dec_1",
+      "timestamp": "2026-09-29T18:30:00Z",
+      "question": "What if I go to trip 2 days before Midterms?",
+      "recommended_scenario": "Future B (Pre-Trip Sprint)",
+      "chosen_scenario": "Future B (Pre-Trip Sprint)",
+      "user_reason": "I wanted to clear my coursework beforehand so I could travel guilt-free.",
+      "is_disagreement": false,
+      "actual_outcome": "Completed all 3 modules before Friday departure. Traveled with zero anxiety.",
+      "outcome_rating": 5,
+      "outcome_feedback": "The pre-trip sprint gave me peace of mind."
+    },
+    {
+      "id": "dec_2",
+      "timestamp": "2026-09-26T21:00:00Z",
+      "question": "Should I pull an all-nighter for DBMS seminar?",
+      "recommended_scenario": "Future B (Rest & Targeted Morning Revision)",
+      "chosen_scenario": "Future A (All-Nighter Cramming)",
+      "user_reason": "Felt unconfident about relational algebra theorems.",
+      "is_disagreement": true,
+      "actual_outcome": "Fell asleep in afternoon class the next day; experienced 35% stamina crash.",
+      "outcome_rating": 2,
+      "outcome_feedback": "The twin was right: the all-nighter crashed my stamina for the whole next day."
+    }
+  ],
+  "grades": [
+    {
+      "id": "g_1790771507647",
+      "subject_id": "s_1",
+      "subject_name": "Artificial Intelligence",
+      "assessment_name": "Final Practical Quiz",
+      "score": 48.0,
+      "max_score": 50.0,
+      "weight": 20.0,
+      "grade_letter": "A+",
+      "notes": "Optimal performance",
+      "date_recorded": "2026-09-30"
+    },
+    {
+      "id": "g_1",
+      "subject_id": "s_1",
+      "subject_name": "Artificial Intelligence",
+      "assessment_name": "Midterm Exam 1",
+      "score": 46.0,
+      "max_score": 50.0,
+      "weight": 25.0,
+      "grade_letter": "A+",
+      "notes": "Excellent grasp of heuristic search algorithms.",
+      "date_recorded": "2026-09-22"
+    },
+    {
+      "id": "g_2",
+      "subject_id": "s_1",
+      "subject_name": "Artificial Intelligence",
+      "assessment_name": "Lab Project 1",
+      "score": 88.0,
+      "max_score": 100.0,
+      "weight": 20.0,
+      "grade_letter": "A",
+      "notes": "Graph search visualizer implemented cleanly.",
+      "date_recorded": "2026-09-28"
+    },
+    {
+      "id": "g_3",
+      "subject_id": "s_2",
+      "subject_name": "Cloud Computing Lab",
+      "assessment_name": "Hands-on Practical Quiz",
+      "score": 18.5,
+      "max_score": 20.0,
+      "weight": 20.0,
+      "grade_letter": "A+",
+      "notes": "Docker containerization benchmark verified.",
+      "date_recorded": "2026-09-25"
+    }
+  ],
+  "subject_targets": {
+    "s_1": "A+",
+    "s_2": "A"
+  },
+  "privacy_controls": {
+    "timetable_access": true,
+    "focus_telemetry_access": true,
+    "grades_access": true,
+    "quiz_proof_access": true,
+    "gps_location": false,
+    "private_chats": false
+  },
+  "student_parent_relationships": [
+    {
+      "id": "rel_demo_1",
+      "student_email": "navin.x002@gmail.com",
+      "student_name": "Adarsh Sharma",
+      "parent_email": "parent.suresh@gmail.com",
+      "parent_name": "Mr. Suresh Sharma",
+      "status": "revoked",
+      "invitation_code": "TS-LINK-8921",
+      "created_at": "2026-09-30T10:00:00",
+      "approved_at": "2026-09-30T10:05:00"
+    },
+    {
+      "id": "rel_demo_2",
+      "student_email": "navinnavi8431@gmail.com",
+      "student_name": "Adarsh Sharma",
+      "parent_email": "parent.suresh@gmail.com",
+      "parent_name": "Mr. Suresh Sharma",
+      "status": "approved",
+      "invitation_code": "TS-LINK-8921",
+      "created_at": "2026-09-30T10:00:00",
+      "approved_at": "2026-09-30T10:05:00"
+    },
+    {
+      "id": "rel_1790782772494",
+      "student_email": "navin.x002@gmail.com",
+      "student_name": "Adarsh Sharma",
+      "parent_email": "apex88266@gmail.com",
+      "parent_name": "akash",
+      "status": "approved",
+      "invitation_code": "TS-LINK-8921",
+      "created_at": "2026-09-30T21:09:32.494757",
+      "approved_at": "2026-09-30T21:10:32.485510"
+    }
+  ],
+  "parent_permissions": {
+    "navinnavi8431@gmail.com": {
+      "tasks": true,
+      "consistency": true,
+      "study_time": true,
+      "login_activity": true,
+      "exam_information": true,
+      "study_history": true,
+      "digital_twin_insights": true,
+      "private_twin_conversations": false,
+      "personal_notes": false,
+      "private_goals": false
+    },
+    "navin.x002@gmail.com": {
+      "tasks": true,
+      "consistency": true,
+      "study_time": true,
+      "login_activity": true,
+      "exam_information": true,
+      "study_history": true,
+      "digital_twin_insights": true,
+      "private_twin_conversations": false,
+      "personal_notes": false,
+      "private_goals": false
+    }
+  },
+  "exams": [
+    {
+      "id": "ex_1",
+      "subject": "Data Structures & Algorithms",
+      "exam_date": "2026-10-12",
+      "preparation_progress": 78
+    },
+    {
+      "id": "ex_2",
+      "subject": "Database Management Systems (DBMS)",
+      "exam_date": "2026-10-18",
+      "preparation_progress": 65
+    },
+    {
+      "id": "ex_3",
+      "subject": "Machine Learning & Neural Networks",
+      "exam_date": "2026-10-25",
+      "preparation_progress": 82
+    }
+  ],
+  "study_sessions": [
+    {
+      "day": "Monday",
+      "date": "2026-09-28",
+      "duration_minutes": 135,
+      "duration_display": "2h 15m",
+      "subject": "Machine Learning"
+    },
+    {
+      "day": "Tuesday",
+      "date": "2026-09-29",
+      "duration_minutes": 100,
+      "duration_display": "1h 40m",
+      "subject": "DBMS"
+    },
+    {
+      "day": "Wednesday",
+      "date": "2026-09-30",
+      "duration_minutes": 185,
+      "duration_display": "3h 05m",
+      "subject": "Python Project"
+    },
+    {
+      "day": "Thursday",
+      "date": "2026-10-01",
+      "duration_minutes": 140,
+      "duration_display": "2h 20m",
+      "subject": "Machine Learning Lab"
+    },
+    {
+      "day": "Friday",
+      "date": "2026-10-02",
+      "duration_minutes": 110,
+      "duration_display": "1h 50m",
+      "subject": "Computer Networks"
+    },
+    {
+      "day": "Saturday",
+      "date": "2026-10-03",
+      "duration_minutes": 165,
+      "duration_display": "2h 45m",
+      "subject": "Exam Preparation"
+    },
+    {
+      "day": "Sunday",
+      "date": "2026-10-04",
+      "duration_minutes": 70,
+      "duration_display": "1h 10m",
+      "subject": "Weekly Review"
+    }
+  ],
+  "activity_logs": [
+    {
+      "id": "act_1790783936286",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "09:28 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790782819689",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "09:10 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790782579044",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "09:06 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790778562207",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "07:59 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790778423364",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "07:57 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790778335215",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "07:55 PM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "8:42 AM",
+      "logout_time": "10:18 AM",
+      "duration": "1h 36m",
+      "date": "Today"
+    },
+    {
+      "id": "act_2",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "7:30 PM",
+      "logout_time": "9:05 PM",
+      "duration": "1h 35m",
+      "date": "Yesterday"
+    },
+    {
+      "id": "act_3",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "2:15 PM",
+      "logout_time": "4:30 PM",
+      "duration": "2h 15m",
+      "date": "2 days ago"
+    }
+  ]
+}
