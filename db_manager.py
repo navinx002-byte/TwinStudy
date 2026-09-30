@@ -186,8 +186,10 @@ class DatabaseManager:
                 credits INT DEFAULT 3,
                 target_percentage REAL DEFAULT 85.0,
                 professor VARCHAR(191),
+                teacher VARCHAR(191),
                 room VARCHAR(64),
                 color VARCHAR(32) DEFAULT '#3b82f6',
+                type VARCHAR(64) DEFAULT 'Lecture',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """,
@@ -197,11 +199,18 @@ class DatabaseManager:
                 user_id VARCHAR(64) NOT NULL,
                 subject_id VARCHAR(64),
                 subject_name VARCHAR(191),
+                subject VARCHAR(191),
                 day VARCHAR(32) NOT NULL,
                 time_slot VARCHAR(64) NOT NULL,
+                time VARCHAR(64),
+                start_time VARCHAR(32),
+                end_time VARCHAR(32),
                 room VARCHAR(64),
                 professor VARCHAR(191),
+                teacher VARCHAR(191),
                 color VARCHAR(32) DEFAULT '#3b82f6',
+                type VARCHAR(64) DEFAULT 'Lecture',
+                week_type VARCHAR(64) DEFAULT 'All',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """,
@@ -382,6 +391,61 @@ class DatabaseManager:
             print("[DB] Relational schema initialized successfully.")
         finally:
             conn.close()
+
+        self._ensure_columns_exist()
+
+    def _ensure_columns_exist(self):
+        """Ensures that all necessary schedule and timetable columns exist without losing existing data."""
+        try:
+            if self.engine_type == "sqlite":
+                conn = self.get_connection()
+                try:
+                    cur = conn.cursor()
+                    cur.execute("PRAGMA table_info(subjects)")
+                    cur_cols = [r[1] for r in cur.fetchall()]
+                    if "teacher" not in cur_cols:
+                        cur.execute("ALTER TABLE subjects ADD COLUMN teacher VARCHAR(191)")
+                    if "type" not in cur_cols:
+                        cur.execute("ALTER TABLE subjects ADD COLUMN type VARCHAR(64) DEFAULT 'Lecture'")
+
+                    cur.execute("PRAGMA table_info(classes)")
+                    cls_cols = [r[1] for r in cur.fetchall()]
+                    cols_to_add = [
+                        ("subject", "VARCHAR(191)"),
+                        ("time", "VARCHAR(64)"),
+                        ("start_time", "VARCHAR(32)"),
+                        ("end_time", "VARCHAR(32)"),
+                        ("teacher", "VARCHAR(191)"),
+                        ("type", "VARCHAR(64) DEFAULT 'Lecture'"),
+                        ("week_type", "VARCHAR(64) DEFAULT 'All'")
+                    ]
+                    for col, ctype in cols_to_add:
+                        if col not in cls_cols:
+                            cur.execute(f"ALTER TABLE classes ADD COLUMN {col} {ctype}")
+                    conn.commit()
+                finally:
+                    conn.close()
+            else:
+                for col, ctype in [("teacher", "VARCHAR(191)"), ("type", "VARCHAR(64) DEFAULT 'Lecture'")]:
+                    try:
+                        self.execute(f"ALTER TABLE subjects ADD COLUMN {col} {ctype}")
+                    except Exception:
+                        pass
+                for col, ctype in [
+                    ("subject", "VARCHAR(191)"),
+                    ("time", "VARCHAR(64)"),
+                    ("start_time", "VARCHAR(32)"),
+                    ("end_time", "VARCHAR(32)"),
+                    ("teacher", "VARCHAR(191)"),
+                    ("type", "VARCHAR(64) DEFAULT 'Lecture'"),
+                    ("week_type", "VARCHAR(64) DEFAULT 'All'")
+                ]:
+                    try:
+                        self.execute(f"ALTER TABLE classes ADD COLUMN {col} {ctype}")
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"[DB] Notice during column migration: {e}")
 
     def migrate_from_json_if_needed(self):
         """Seeds the relational database from twin_database.json if users table is empty."""
@@ -756,7 +820,91 @@ class DatabaseManager:
         if token:
             self.execute("DELETE FROM sessions WHERE token = %s", (token.strip(),))
 
-    # ---------------- USER-SCOPED DATA ACCESS ----------------
+    # ---------------- USER-SCOPED DATA ACCESS & ACADEMIC STORAGE ----------------
+    def save_user_academic_state(self, user_id: str, profile: dict, subjects: list, classes: list, tasks: list = None):
+        if not user_id:
+            return
+        
+        # 1. Update student profile
+        p_name = profile.get("student_name") or ""
+        p_college = profile.get("college") or ""
+        p_course = profile.get("course") or ""
+        p_semester = profile.get("semester") or ""
+        p_spec = profile.get("specialization") or "cs"
+        p_year = profile.get("academic_year") or "2026-2027"
+
+        prof_exists = self.fetchone("SELECT id FROM student_profiles WHERE user_id = %s", (user_id,))
+        if prof_exists:
+            self.execute("""
+                UPDATE student_profiles
+                SET student_name = %s, college = %s, course = %s, semester = %s,
+                    specialization = %s, academic_year = %s
+                WHERE user_id = %s
+            """, (p_name, p_college, p_course, p_semester, p_spec, p_year, user_id))
+        else:
+            p_id = f"prof_{uuid.uuid4().hex[:8]}"
+            self.execute("""
+                INSERT INTO student_profiles (id, user_id, student_name, college, course, semester, specialization, academic_year)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (p_id, user_id, p_name, p_college, p_course, p_semester, p_spec, p_year))
+
+        # Update users table info
+        grade_str = f"{p_course} ({p_semester})" if p_course and p_semester else (p_course or "")
+        self.execute("""
+            UPDATE users SET college = %s, grade_level = %s WHERE id = %s
+        """, (p_college, grade_str, user_id))
+        if p_name:
+            self.execute("UPDATE users SET name = %s WHERE id = %s", (p_name, user_id))
+
+        # 2. Update subjects
+        self.execute("DELETE FROM subjects WHERE user_id = %s", (user_id,))
+        for s in subjects:
+            s_id = s.get("id") or f"s_{uuid.uuid4().hex[:10]}"
+            s_name = s.get("name", "Subject")
+            s_code = s.get("code", "")
+            s_teacher = s.get("teacher") or s.get("professor") or "Faculty"
+            s_room = s.get("room", "")
+            s_credits = safe_int(s.get("credits"), 3)
+            s_color = s.get("color", "#00C4CC")
+            s_type = s.get("type", "Lecture")
+            s_target = safe_float(s.get("target_percentage"), 85.0)
+
+            self.execute("""
+                INSERT INTO subjects (id, user_id, name, code, credits, target_percentage, professor, teacher, room, color, type)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (s_id, user_id, s_name, s_code, s_credits, s_target, s_teacher, s_teacher, s_room, s_color, s_type))
+
+        # 3. Update classes
+        self.execute("DELETE FROM classes WHERE user_id = %s", (user_id,))
+        for c in classes:
+            c_id = c.get("id") or f"c_{uuid.uuid4().hex[:10]}"
+            sub_id = c.get("subject_id", "")
+            sub_name = c.get("subject") or c.get("subject_name") or "Class"
+            c_day = c.get("day", "Monday")
+            c_start = c.get("start_time", "10:00")
+            c_end = c.get("end_time", "11:30")
+            c_time = c.get("time") or f"{c_start} - {c_end}"
+            c_teacher = c.get("teacher") or c.get("professor") or "Faculty"
+            c_room = c.get("room", "")
+            c_type = c.get("type", "Lecture")
+            c_color = c.get("color", "#00C4CC")
+            c_week = c.get("week_type", "All")
+
+            self.execute("""
+                INSERT INTO classes (id, user_id, subject_id, subject_name, subject, day, time_slot, time, start_time, end_time, room, professor, teacher, color, type, week_type)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (c_id, user_id, sub_id, sub_name, sub_name, c_day, c_time, c_time, c_start, c_end, c_room, c_teacher, c_teacher, c_color, c_type, c_week))
+
+        # 4. Tasks (dynamic coursework tasks)
+        if tasks is not None:
+            self.execute("DELETE FROM tasks WHERE user_id = %s", (user_id,))
+            for t in tasks:
+                t_id = t.get("id") or f"t_{uuid.uuid4().hex[:10]}"
+                self.execute("""
+                    INSERT INTO tasks (id, user_id, subject_id, subject_name, title, description, due_date, priority, status, points_reward, verified)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (t_id, user_id, t.get("subject_id", ""), t.get("subject", "Coursework"), t.get("title", ""), t.get("proof_required", ""), t.get("due_date", ""), t.get("priority", "High"), t.get("status", "Pending"), safe_int(t.get("points_reward", 100)), 1 if t.get("verified") else 0))
+
     def get_user_academic_state(self, user_id: str):
         user = self.get_user_by_id(user_id)
         if not user:
@@ -765,7 +913,57 @@ class DatabaseManager:
         profile = self.fetchone("SELECT * FROM student_profiles WHERE user_id = %s", (user_id,))
         subjects = self.fetchall("SELECT * FROM subjects WHERE user_id = %s ORDER BY name ASC", (user_id,))
         classes = self.fetchall("SELECT * FROM classes WHERE user_id = %s ORDER BY day ASC, time_slot ASC", (user_id,))
+
+        # Auto-sync existing subjects and classes from legacy JSON if relational DB is empty for this user
+        if (len(subjects) == 0 or len(classes) == 0) and os.path.exists(LEGACY_JSON_PATH):
+            try:
+                with open(LEGACY_JSON_PATH, "r", encoding="utf-8") as f:
+                    legacy_data = json.load(f)
+                u_email = (user.get("email") or "").strip().lower()
+                legacy_user = legacy_data.get("registered_users", {}).get(u_email)
+                if not legacy_user and legacy_data.get("user", {}).get("email", "").lower() == u_email:
+                    legacy_user = legacy_data.get("user", {})
+
+                if legacy_user:
+                    leg_subs = legacy_user.get("subjects") or legacy_data.get("subjects", [])
+                    leg_cls = legacy_user.get("classes") or legacy_data.get("classes", [])
+                    leg_prof = legacy_user.get("academic_profile") or legacy_data.get("academic_profile", {})
+                    leg_tasks = legacy_user.get("tasks") or legacy_data.get("tasks", [])
+                    if leg_subs or leg_cls:
+                        self.save_user_academic_state(user_id, leg_prof, leg_subs, leg_cls, leg_tasks)
+                        profile = self.fetchone("SELECT * FROM student_profiles WHERE user_id = %s", (user_id,))
+                        subjects = self.fetchall("SELECT * FROM subjects WHERE user_id = %s ORDER BY name ASC", (user_id,))
+                        classes = self.fetchall("SELECT * FROM classes WHERE user_id = %s ORDER BY day ASC, time_slot ASC", (user_id,))
+            except Exception as e:
+                print(f"[DB] Auto-sync from JSON notice: {e}")
+
+        # Normalize subject fields for frontend
+        for s in subjects:
+            s["teacher"] = s.get("teacher") or s.get("professor") or "Faculty"
+            s["professor"] = s["teacher"]
+            s["type"] = s.get("type") or "Lecture"
+
+        # Normalize class fields for frontend
+        for c in classes:
+            c["subject"] = c.get("subject") or c.get("subject_name") or "Class"
+            c["subject_name"] = c["subject"]
+            c["time"] = c.get("time") or c.get("time_slot") or ""
+            c["time_slot"] = c["time"]
+            c["teacher"] = c.get("teacher") or c.get("professor") or "Faculty"
+            c["professor"] = c["teacher"]
+            c["type"] = c.get("type") or "Lecture"
+            c["week_type"] = c.get("week_type") or "All"
+            c["start_time"] = c.get("start_time") or ""
+            c["end_time"] = c.get("end_time") or ""
+
         tasks = self.fetchall("SELECT * FROM tasks WHERE user_id = %s ORDER BY status ASC, due_date ASC", (user_id,))
+        for t in tasks:
+            t["subject"] = t.get("subject_name") or t.get("subject") or "Coursework"
+            t["subject_name"] = t["subject"]
+            t["proof_status"] = "verified" if t.get("verified") else "pending"
+            t["points"] = t.get("points_reward") or 100
+            t["due"] = f"Due: {t.get('due_date')}" if t.get("due_date") else "Upcoming"
+
         exams = self.fetchall("SELECT * FROM exams WHERE user_id = %s ORDER BY exam_date ASC", (user_id,))
         grades = self.fetchall("SELECT * FROM grades WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
         patterns = self.fetchall("SELECT * FROM behavior_patterns WHERE user_id = %s AND is_active = 1", (user_id,))

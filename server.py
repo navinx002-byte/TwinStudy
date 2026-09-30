@@ -612,31 +612,20 @@ def save_academic():
     subjects = data.get("subjects", [])
     classes = data.get("classes", [])
 
+    user = get_auth_user(request)
+    if not user and email:
+        user = db_mgr.get_user_by_email(email)
+
+    if not email and user:
+        email = (user.get("email") or "").strip().lower()
+
     db = load_db()
     if not email:
         email = db.get("user", {}).get("email", "navinnavi8431@gmail.com")
 
-    if "registered_users" not in db:
-        db["registered_users"] = {}
-
-    if email in db["registered_users"]:
-        db["registered_users"][email]["academic_profile"] = profile
-        db["registered_users"][email]["subjects"] = subjects
-        db["registered_users"][email]["classes"] = classes
-
-    db["academic_profile"] = profile
-    db["subjects"] = subjects
-    db["classes"] = classes
-
-    if profile.get("student_name"):
-        db["user"]["name"] = profile["student_name"]
-    if profile.get("college"):
-        db["user"]["college"] = profile["college"]
-    if profile.get("course") and profile.get("semester"):
-        db["user"]["grade_level"] = f"{profile['course']} ({profile['semester']})"
-
+    # Generate dynamic proof-based tasks for these subjects
+    dynamic_tasks = []
     if subjects:
-        dynamic_tasks = []
         for i, s in enumerate(subjects[:5]):
             s_name = s.get("name", "Subject")
             dynamic_tasks.append({
@@ -658,9 +647,42 @@ def save_academic():
                 "estimated_effort_hours": 2.5 + i * 0.5,
                 "weight_percent": 15 + i * 5
             })
-        db["tasks"] = dynamic_tasks
-        if email in db.get("registered_users", {}):
+
+    # Save to Relational Database
+    user_id = user["id"] if user else None
+    if not user_id:
+        u_record = db_mgr.get_user_by_email(email)
+        if u_record:
+            user_id = u_record["id"]
+
+    if user_id:
+        db_mgr.save_user_academic_state(user_id, profile, subjects, classes, dynamic_tasks)
+
+    # Also keep JSON database in sync for backwards compatibility
+    if "registered_users" not in db:
+        db["registered_users"] = {}
+
+    if email:
+        if email not in db["registered_users"]:
+            db["registered_users"][email] = {}
+        db["registered_users"][email]["academic_profile"] = profile
+        db["registered_users"][email]["subjects"] = subjects
+        db["registered_users"][email]["classes"] = classes
+        if dynamic_tasks:
             db["registered_users"][email]["tasks"] = dynamic_tasks
+
+    db["academic_profile"] = profile
+    db["subjects"] = subjects
+    db["classes"] = classes
+    if dynamic_tasks:
+        db["tasks"] = dynamic_tasks
+
+    if profile.get("student_name"):
+        db["user"]["name"] = profile["student_name"]
+    if profile.get("college"):
+        db["user"]["college"] = profile["college"]
+    if profile.get("course") and profile.get("semester"):
+        db["user"]["grade_level"] = f"{profile['course']} ({profile['semester']})"
 
     save_db(db)
     return jsonify({"status": "success", "message": "Academic timetable and profile saved successfully!", "data": db})
@@ -679,18 +701,24 @@ def create_student_task():
     if not title:
         return jsonify({"status": "error", "message": "Task title is required."}), 400
 
+    user = get_auth_user(request)
+    if not user and email:
+        user = db_mgr.get_user_by_email(email)
+
     db = load_db()
     if not email:
         email = db.get("user", {}).get("email", "navinnavi8431@gmail.com")
 
+    task_id = f"t_{int(datetime.datetime.now().timestamp()*1000)}"
+    due_date_str = (datetime.date.today() + datetime.timedelta(days=due_days)).isoformat()
     new_task = {
-        "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}",
+        "id": task_id,
         "subject": subject,
         "subject_color": data.get("subject_color", "#00C4CC"),
         "title": title,
         "type": data.get("type", "Assignment"),
         "due": f"In {due_days} days",
-        "due_date": (datetime.date.today() + datetime.timedelta(days=due_days)).isoformat(),
+        "due_date": due_date_str,
         "days_remaining": due_days,
         "points": 100,
         "points_reward": 100,
@@ -702,6 +730,15 @@ def create_student_task():
         "estimated_effort_hours": estimated_hours,
         "weight_percent": weight
     }
+
+    if user:
+        try:
+            db_mgr.execute("""
+                INSERT INTO tasks (id, user_id, subject_id, subject_name, title, description, due_date, priority, status, points_reward, verified)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (task_id, user["id"], "", subject, title, new_task["proof_required"], due_date_str, priority, "Pending", 100, 0))
+        except Exception as e:
+            print(f"[DB] Notice inserting task: {e}")
 
     if "tasks" not in db:
         db["tasks"] = []
@@ -719,6 +756,10 @@ def create_student_task():
 def generate_student_tasks():
     data = request.get_json() or {}
     email = data.get("email", "").strip().lower()
+
+    user = get_auth_user(request)
+    if not user and email:
+        user = db_mgr.get_user_by_email(email)
 
     db = load_db()
     if not email:
@@ -756,6 +797,17 @@ def generate_student_tasks():
             "estimated_effort_hours": 2.5 + i * 0.5,
             "weight_percent": 15 + i * 5
         })
+
+    if user:
+        try:
+            db_mgr.execute("DELETE FROM tasks WHERE user_id = %s", (user["id"],))
+            for t in dynamic_tasks:
+                db_mgr.execute("""
+                    INSERT INTO tasks (id, user_id, subject_id, subject_name, title, description, due_date, priority, status, points_reward, verified)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (t["id"], user["id"], "", t["subject"], t["title"], t["proof_required"], t["due_date"], t["priority"], "Pending", t["points_reward"], 0))
+        except Exception as e:
+            print(f"[DB] Notice generating tasks in relational db: {e}")
 
     db["tasks"] = dynamic_tasks
     if email in db.get("registered_users", {}):
@@ -862,23 +914,71 @@ def update_student_profile():
 @app.route("/api/telemetry/log-session", methods=["POST"])
 def log_telemetry_session():
     data = request.get_json() or {}
-    duration_min = data.get("duration_minutes", 25)
+    duration_min = int(data.get("duration_minutes", 25))
     subject = data.get("subject", "General Study")
 
-    db = load_db()
+    user = get_auth_user(request)
     earned = int(duration_min * 2)
+
+    db = load_db()
     db["user"]["points"] = db["user"].get("points", 0) + earned
     db["user"]["streak_days"] = db["user"].get("streak_days", 1) + 1
 
+    notif_id = f"notif_{int(datetime.datetime.now().timestamp()*1000)}"
     notif = {
-        "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+        "id": notif_id,
         "title": f"Focus Session Completed (+{earned} pts)",
         "description": f"Logged {duration_min}m of deep focus for {subject}. Cognitive stamina maintained.",
         "time": "Just now",
         "type": "reward",
         "read": False
     }
+    if "notifications" not in db:
+        db["notifications"] = []
     db["notifications"].insert(0, notif)
+
+    # Record in study telemetry history
+    if "study_telemetry" not in db or not isinstance(db["study_telemetry"], dict):
+        db["study_telemetry"] = {}
+    if "history" not in db["study_telemetry"]:
+        db["study_telemetry"]["history"] = []
+
+    stamina_calc = max(70, min(98, 100 - int(duration_min * 0.2)))
+    db["study_telemetry"]["history"].insert(0, {
+        "date": "Today",
+        "duration_minutes": duration_min,
+        "subject": subject,
+        "stamina": stamina_calc
+    })
+    db["study_telemetry"]["total_focus_minutes_today"] = db["study_telemetry"].get("total_focus_minutes_today", 0) + duration_min
+    db["study_telemetry"]["sessions_completed_today"] = db["study_telemetry"].get("sessions_completed_today", 0) + 1
+
+    # Record in activity logs as well
+    if "activity_logs" not in db:
+        db["activity_logs"] = []
+    user_email = user["email"] if user else db.get("user", {}).get("email", "")
+    db["activity_logs"].insert(0, {
+        "id": f"act_{int(datetime.datetime.now().timestamp()*1000)}",
+        "user_email": user_email,
+        "login_time": datetime.datetime.now().strftime("%I:%M %p"),
+        "logout_time": "Completed",
+        "duration": f"{duration_min}m ({subject})",
+        "date": "Today"
+    })
+
+    # Update in relational database
+    if user:
+        try:
+            db_mgr.execute("""
+                UPDATE users SET points = points + %s, streak_days = streak_days + 1 WHERE id = %s
+            """, (earned, user["id"]))
+            db_mgr.execute("""
+                INSERT INTO notifications (id, user_id, title, description, type)
+                VALUES (%s, %s, %s, %s, 'reward')
+            """, (notif_id, user["id"], notif["title"], notif["description"]))
+        except Exception as e:
+            print(f"[DB] Error updating points/notif in relational db: {e}")
+
     save_db(db)
 
     return jsonify({

@@ -8,8 +8,8 @@
     "is_minor": true,
     "role": "student_minor",
     "role_display": "Student (Minor)",
-    "points": 200,
-    "streak_days": 2,
+    "points": 325,
+    "streak_days": 3,
     "daily_study_hours": 3.0,
     "focus_duration_minutes": 45,
     "learning_preference": "Practice problems and step-by-step review",
@@ -118,9 +118,17 @@
         }
       ],
       "role": "student",
-      "points": 200,
-      "streak_days": 2,
+      "points": 325,
+      "streak_days": 3,
       "notifications": [
+        {
+          "id": "notif_1790801437111",
+          "title": "Proof Verified: Complete ge Problem Set & Module Review (+125 pts)",
+          "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+          "time": "Just now",
+          "type": "reward",
+          "read": false
+        },
         {
           "id": "notif_1790798499176",
           "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
@@ -175,105 +183,93 @@
       "password": "2222",
       "registered_at": "2026-09-30T18:29:56.209004",
       "academic_profile": {
-        "academic_year": "2026-2028",
         "college": "VTU College",
         "course": "Computer Science Engineering",
         "semester": "Semester 4",
-        "specialization": "cs",
         "student_name": "Navin"
       },
       "subjects": [
         {
-          "code": "DV4523",
+          "id": "s_net",
+          "name": "Computer Networks",
+          "code": "CS401",
+          "teacher": "Dr. Raman",
+          "room": "Lab 2",
+          "credits": "4",
           "color": "#00C4CC",
-          "credits": "",
-          "id": "s_1790768668419",
-          "name": "DCN",
-          "room": "hg",
-          "teacher": "hggsda",
           "type": "Lecture"
         },
         {
-          "code": "wr",
+          "id": "s_db",
+          "name": "Database Systems",
+          "code": "CS402",
+          "teacher": "Prof. Ananya",
+          "room": "Room 102",
+          "credits": "3",
           "color": "#8B5CF6",
-          "credits": "",
-          "id": "s_1790768678946",
-          "name": "ge",
-          "room": "rw",
-          "teacher": "w",
           "type": "Lecture"
         },
         {
-          "code": "erh",
+          "id": "s_os",
+          "name": "Operating Systems",
+          "code": "CS403",
+          "teacher": "Dr. Verma",
+          "room": "Room 205",
+          "credits": "4",
           "color": "#14B8A6",
-          "credits": "",
-          "id": "s_1790768703026",
-          "name": "erj",
-          "room": "ty",
-          "teacher": "234",
           "type": "Lecture"
-        },
-        {
-          "name": "python",
-          "code": "py005",
-          "teacher": "sowmya",
-          "room": "67",
-          "credits": "",
-          "color": "#3B82F6",
-          "type": "Lecture",
-          "id": "s_1790774845361"
         }
       ],
       "classes": [
         {
-          "color": "#00C4CC",
+          "id": "c_1",
+          "subject_id": "s_net",
+          "subject": "Computer Networks",
           "day": "Monday",
-          "end_time": "11:30",
-          "id": "c_1790768728250",
-          "room": "hg",
           "start_time": "10:00",
-          "subject": "DCN",
-          "subject_id": "s_1790768668419",
-          "teacher": "hggsda",
+          "end_time": "11:30",
           "time": "10:00 AM - 11:30 AM",
+          "teacher": "Dr. Raman",
+          "room": "Lab 2",
           "type": "Lecture",
+          "color": "#00C4CC",
           "week_type": "All"
         },
         {
-          "color": "#14B8A6",
-          "day": "Thursday",
-          "end_time": "11:30",
-          "id": "c_1790768744250",
-          "room": "ty",
-          "start_time": "10:00",
-          "subject": "erj",
-          "subject_id": "s_1790768703026",
-          "teacher": "234",
-          "time": "10:00 AM - 11:30 AM",
+          "id": "c_2",
+          "subject_id": "s_db",
+          "subject": "Database Systems",
+          "day": "Tuesday",
+          "start_time": "11:30",
+          "end_time": "13:00",
+          "time": "11:30 AM - 1:00 PM",
+          "teacher": "Prof. Ananya",
+          "room": "Room 102",
           "type": "Lecture",
-          "week_type": "All"
-        },
-        {
           "color": "#8B5CF6",
-          "day": "Friday",
-          "end_time": "11:30",
-          "id": "c_1790768753960",
-          "room": "rw",
-          "start_time": "10:00",
-          "subject": "ge",
-          "subject_id": "s_1790768678946",
-          "teacher": "w",
-          "time": "10:00 AM - 11:30 AM",
+          "week_type": "All"
+        },
+        {
+          "id": "c_3",
+          "subject_id": "s_os",
+          "subject": "Operating Systems",
+          "day": "Thursday",
+          "start_time": "14:00",
+          "end_time": "15:30",
+          "time": "2:00 PM - 3:30 PM",
+          "teacher": "Dr. Verma",
+          "room": "Room 205",
           "type": "Lecture",
+          "color": "#14B8A6",
           "week_type": "All"
         }
       ],
       "tasks": [
         {
-          "id": "t_1790795833651_1",
-          "subject": "DCN",
+          "id": "t_1790801415198_1",
+          "subject": "Computer Networks",
           "subject_color": "#00C4CC",
-          "title": "Complete DCN Problem Set & Module Review",
+          "title": "Complete Computer Networks Problem Set & Module Review",
           "type": "Assignment",
           "due": "In 2 days",
           "due_date": "2026-10-03",
@@ -289,10 +285,10 @@
           "weight_percent": 15
         },
         {
-          "id": "t_1790795833651_2",
-          "subject": "ge",
+          "id": "t_1790801415198_2",
+          "subject": "Database Systems",
           "subject_color": "#8B5CF6",
-          "title": "Complete ge Problem Set & Module Review",
+          "title": "Complete Database Systems Problem Set & Module Review",
           "type": "Lab Practical",
           "due": "In 3 days",
           "due_date": "2026-10-04",
@@ -308,10 +304,10 @@
           "weight_percent": 20
         },
         {
-          "id": "t_1790795833651_3",
-          "subject": "erj",
+          "id": "t_1790801415198_3",
+          "subject": "Operating Systems",
           "subject_color": "#14B8A6",
-          "title": "Complete erj Problem Set & Module Review",
+          "title": "Complete Operating Systems Problem Set & Module Review",
           "type": "Assignment",
           "due": "In 4 days",
           "due_date": "2026-10-05",
@@ -325,25 +321,6 @@
           "priority": "High",
           "estimated_effort_hours": 3.5,
           "weight_percent": 25
-        },
-        {
-          "id": "t_1790795833651_4",
-          "subject": "python",
-          "subject_color": "#3B82F6",
-          "title": "Complete python Problem Set & Module Review",
-          "type": "Lab Practical",
-          "due": "In 5 days",
-          "due_date": "2026-10-06",
-          "days_remaining": 5,
-          "points": 175,
-          "points_reward": 175,
-          "status": "Pending",
-          "verified": false,
-          "proof_status": "pending",
-          "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
-          "priority": "High",
-          "estimated_effort_hours": 4.0,
-          "weight_percent": 30
         }
       ],
       "points": 200,
@@ -525,11 +502,17 @@
   },
   "decision_history": [],
   "study_telemetry": {
-    "total_focus_minutes_today": 90,
+    "total_focus_minutes_today": 135,
     "stamina_score": 92,
     "fatigue_decay": 28,
-    "sessions_completed_today": 2,
+    "sessions_completed_today": 3,
     "history": [
+      {
+        "date": "Today",
+        "duration_minutes": 45,
+        "subject": "Computer Networks",
+        "stamina": 91
+      },
       {
         "date": "Today",
         "duration_minutes": 45,
@@ -553,6 +536,22 @@
     "allow_nudges": true
   },
   "notifications": [
+    {
+      "id": "notif_1790801437111",
+      "title": "Proof Verified: Complete ge Problem Set & Module Review (+125 pts)",
+      "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
+    {
+      "id": "notif_1790801415259",
+      "title": "Focus Session Completed (+90 pts)",
+      "description": "Logged 45m of deep focus for Computer Networks. Cognitive stamina maintained.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
     {
       "id": "notif_1790798499176",
       "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
@@ -631,10 +630,10 @@
       "id": "bp_1",
       "title": "Postpones Homework For High-Weight Exams",
       "pattern_type": "prioritization",
-      "confidence": 88.5,
-      "evidence_count": 14,
-      "evidence_summary": "Student historically delays assignments to focus on exam prep, risking late penalties (-10% average).",
-      "weight": 1.35,
+      "confidence": 99.0,
+      "evidence_count": 22,
+      "evidence_summary": "Student preferred 'Proceed as Queried Without Schedule Rebalancing' over default AI recommendation.",
+      "weight": 2.5,
       "is_active": true
     },
     {
@@ -669,6 +668,114 @@
     }
   ],
   "decisions": [
+    {
+      "id": "dec_1790799241496",
+      "timestamp": "2026-10-01T01:44:01.496538",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799237075",
+      "timestamp": "2026-10-01T01:43:57.075545",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799235339",
+      "timestamp": "2026-10-01T01:43:55.339575",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "user_reason": "Accepted Twin recommendation",
+      "is_disagreement": false,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799234065",
+      "timestamp": "2026-10-01T01:43:54.065479",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799233857",
+      "timestamp": "2026-10-01T01:43:53.857855",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799233656",
+      "timestamp": "2026-10-01T01:43:53.656782",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799233446",
+      "timestamp": "2026-10-01T01:43:53.446882",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799232528",
+      "timestamp": "2026-10-01T01:43:52.528827",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
+    {
+      "id": "dec_1790799231586",
+      "timestamp": "2026-10-01T01:43:51.586230",
+      "question": "i only prepare for one subject",
+      "recommended_scenario": "Time-Boxed 2h Sprint + Controlled Participation",
+      "chosen_scenario": "Proceed as Queried Without Schedule Rebalancing",
+      "user_reason": "Student chose manual override",
+      "is_disagreement": true,
+      "actual_outcome": null,
+      "outcome_rating": null,
+      "outcome_feedback": null
+    },
     {
       "id": "dec_1790775942433",
       "timestamp": "2026-09-30T19:15:42.433450",
@@ -924,6 +1031,62 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act_1790801422693",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "02:20 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801415259",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:20 AM",
+      "logout_time": "Completed",
+      "duration": "45m (Computer Networks)",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801415180",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:20 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801361160",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:19 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801295534",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:18 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801276941",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:17 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790798679562",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "01:34 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
     {
       "id": "act_1790798484859",
       "user_email": "navinnavi8431@gmail.com",

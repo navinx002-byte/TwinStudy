@@ -693,8 +693,14 @@
       const fetchState = async (customEmail) => {
         try {
           const emailParam = customEmail || localStorage.getItem("twinstudy_user_email") || "";
+          const token = localStorage.getItem("twinstudy_auth_token") || "";
           const url = emailParam ? `/api/state?email=${encodeURIComponent(emailParam)}` : "/api/state";
-          const res = await fetch(url);
+          const res = await fetch(url, {
+            headers: {
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              ...(emailParam ? { "x-user-email": emailParam } : {})
+            }
+          });
           const data = await res.json();
           setState(data);
           if (data.academic_profile) {
@@ -1977,11 +1983,17 @@
         }
 
         try {
+          const token = localStorage.getItem("twinstudy_auth_token") || "";
+          const userEmail = state?.user?.email || localStorage.getItem("twinstudy_user_email") || "navinnavi8431@gmail.com";
           const res = await fetch("/api/academic/save", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              "x-user-email": userEmail
+            },
             body: JSON.stringify({
-              email: state?.user?.email || "navinnavi8431@gmail.com",
+              email: userEmail,
               academic_profile: academicProfile,
               subjects: subjectsList,
               classes: classesList
