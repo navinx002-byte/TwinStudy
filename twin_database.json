@@ -1,15 +1,12 @@
 {
   "user": {
-    "name": "Test Student",
-    "dob": "2004-01-01",
-    "age": 20,
-    "is_minor": false,
-    "email": "localtest@gmail.com",
-    "password": "password123",
-    "role": "student",
-    "role_display": "Student",
-    "linking_code": "TS-LINK-2509",
-    "registered_at": "2026-09-30T23:03:28.094177",
+    "name": "Navin",
+    "email": "navin.x002@gmail.com",
+    "dob": "2022-11-25",
+    "age": 3,
+    "is_minor": true,
+    "role": "student_minor",
+    "role_display": "Student (Minor)",
     "points": 100,
     "streak_days": 1,
     "daily_study_hours": 3.0,
@@ -20,39 +17,10 @@
       "Build strong study discipline",
       "Complete coursework on time"
     ],
-    "college": "",
-    "grade_level": "Enrolled Student",
+    "college": "VTU College",
+    "grade_level": "Computer Science Engineering (Semester 4)",
     "guardian_email": "",
-    "academic_profile": {
-      "student_name": "Test Student",
-      "college": "",
-      "course": "",
-      "semester": "",
-      "specialization": "cs",
-      "academic_year": "2026-2027"
-    },
-    "subjects": [],
-    "classes": [],
-    "tasks": [],
-    "grades": [],
-    "parent_controls": {
-      "guardian_email": "",
-      "guardian_name": "",
-      "guardian_approved": false,
-      "allow_view_study_hours": true,
-      "allow_view_proofs": true,
-      "allow_nudges": true
-    },
-    "notifications": [
-      {
-        "id": "notif_1790789608094",
-        "title": "Welcome to TwinStudy, Test Student! 🎓",
-        "description": "Complete your MyStudyLife timetable setup to personalize your twin.",
-        "time": "Just now",
-        "type": "reward",
-        "read": false
-      }
-    ]
+    "linking_code": "TS-LINK-8921"
   },
   "registered_users": {
     "navinnavi8431@gmail.com": {
@@ -303,7 +271,7 @@
       "role": "parent",
       "role_display": "Parent / Guardian",
       "registered_at": "2026-09-30T20:01:11.454029",
-      "linked_student_email": null
+      "linked_student_email": "navin.x002@gmail.com"
     },
     "apex88266@gmail.com": {
       "name": "akash",
@@ -337,7 +305,7 @@
       ],
       "college": "",
       "grade_level": "Enrolled Student",
-      "guardian_email": "",
+      "guardian_email": "testparent@gmail.com",
       "academic_profile": {
         "student_name": "Uday Kumar",
         "college": "",
@@ -351,9 +319,9 @@
       "tasks": [],
       "grades": [],
       "parent_controls": {
-        "guardian_email": "",
+        "guardian_email": "testparent@gmail.com",
         "guardian_name": "",
-        "guardian_approved": false,
+        "guardian_approved": true,
         "allow_view_study_hours": true,
         "allow_view_proofs": true,
         "allow_nudges": true
@@ -371,15 +339,99 @@
     }
   },
   "academic_profile": {
-    "student_name": "Test Student",
-    "college": "",
-    "course": "",
-    "semester": "",
+    "academic_year": "2026-2028",
+    "college": "VTU College",
+    "course": "Computer Science Engineering",
+    "semester": "Semester 4",
     "specialization": "cs",
-    "academic_year": "2026-2027"
+    "student_name": "Navin"
   },
-  "subjects": [],
-  "classes": [],
+  "subjects": [
+    {
+      "code": "DV4523",
+      "color": "#00C4CC",
+      "credits": "",
+      "id": "s_1790768668419",
+      "name": "DCN",
+      "room": "hg",
+      "teacher": "hggsda",
+      "type": "Lecture"
+    },
+    {
+      "code": "wr",
+      "color": "#8B5CF6",
+      "credits": "",
+      "id": "s_1790768678946",
+      "name": "ge",
+      "room": "rw",
+      "teacher": "w",
+      "type": "Lecture"
+    },
+    {
+      "code": "erh",
+      "color": "#14B8A6",
+      "credits": "",
+      "id": "s_1790768703026",
+      "name": "erj",
+      "room": "ty",
+      "teacher": "234",
+      "type": "Lecture"
+    },
+    {
+      "name": "python",
+      "code": "py005",
+      "teacher": "sowmya",
+      "room": "67",
+      "credits": "",
+      "color": "#3B82F6",
+      "type": "Lecture",
+      "id": "s_1790774845361"
+    }
+  ],
+  "classes": [
+    {
+      "color": "#00C4CC",
+      "day": "Monday",
+      "end_time": "11:30",
+      "id": "c_1790768728250",
+      "room": "hg",
+      "start_time": "10:00",
+      "subject": "DCN",
+      "subject_id": "s_1790768668419",
+      "teacher": "hggsda",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    },
+    {
+      "color": "#14B8A6",
+      "day": "Thursday",
+      "end_time": "11:30",
+      "id": "c_1790768744250",
+      "room": "ty",
+      "start_time": "10:00",
+      "subject": "erj",
+      "subject_id": "s_1790768703026",
+      "teacher": "234",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    },
+    {
+      "color": "#8B5CF6",
+      "day": "Friday",
+      "end_time": "11:30",
+      "id": "c_1790768753960",
+      "room": "rw",
+      "start_time": "10:00",
+      "subject": "ge",
+      "subject_id": "s_1790768678946",
+      "teacher": "w",
+      "time": "10:00 AM - 11:30 AM",
+      "type": "Lecture",
+      "week_type": "All"
+    }
+  ],
   "tasks": [],
   "twin_status": {
     "status": "Learning & Verifying",
@@ -619,7 +671,44 @@
       "outcome_feedback": "The twin was right: the all-nighter crashed my stamina for the whole next day."
     }
   ],
-  "grades": [],
+  "grades": [
+    {
+      "id": "g_1",
+      "subject_id": "s_1",
+      "subject_name": "Artificial Intelligence",
+      "assessment_name": "Midterm Exam 1",
+      "score": 46.0,
+      "max_score": 50.0,
+      "weight": 25.0,
+      "grade_letter": "A+",
+      "notes": "Excellent grasp of heuristic search algorithms.",
+      "date_recorded": "2026-09-22"
+    },
+    {
+      "id": "g_2",
+      "subject_id": "s_1",
+      "subject_name": "Artificial Intelligence",
+      "assessment_name": "Lab Project 1",
+      "score": 88.0,
+      "max_score": 100.0,
+      "weight": 20.0,
+      "grade_letter": "A",
+      "notes": "Graph search visualizer implemented cleanly.",
+      "date_recorded": "2026-09-28"
+    },
+    {
+      "id": "g_3",
+      "subject_id": "s_2",
+      "subject_name": "Cloud Computing Lab",
+      "assessment_name": "Hands-on Practical Quiz",
+      "score": 18.5,
+      "max_score": 20.0,
+      "weight": 20.0,
+      "grade_letter": "A+",
+      "notes": "Docker containerization benchmark verified.",
+      "date_recorded": "2026-09-25"
+    }
+  ],
   "subject_targets": {
     "s_1": "A+",
     "s_2": "A"
@@ -665,6 +754,17 @@
       "invitation_code": "TS-LINK-8921",
       "created_at": "2026-09-30T21:09:32.494757",
       "approved_at": "2026-09-30T21:10:32.485510"
+    },
+    {
+      "id": "rel_1790782772495",
+      "student_email": "navin.x002@gmail.com",
+      "student_name": "Navin",
+      "parent_email": "navin.d2942@gmail.com",
+      "parent_name": "akash",
+      "status": "approved",
+      "invitation_code": "TS-LINK-8921",
+      "created_at": "2026-09-30T21:15:32.494757",
+      "approved_at": "2026-09-30T21:15:32.485510"
     }
   ],
   "parent_permissions": {
@@ -789,6 +889,14 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act_1790793916165",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "12:15 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
     {
       "id": "act_1790786720835",
       "user_email": "navin.x002@gmail.com",

@@ -738,13 +738,16 @@
 
       const fetchParentDashboard = async (overrideEmail) => {
         try {
-          const pEmail = overrideEmail || parentUser?.email || "parent.suresh@gmail.com";
+          const pEmail = overrideEmail || parentUser?.email || localStorage.getItem("twinstudy_user_email") || "parent.suresh@gmail.com";
           const res = await fetch("/api/parent/dashboard-data", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ parent_email: pEmail })
           });
           const data = await res.json();
+          if (data && data.approved) {
+            localStorage.setItem("twinstudy_parent_approved", "true");
+          }
           setParentDashboardData(data);
         } catch (e) {
           console.error("Failed to fetch parent dashboard", e);
@@ -757,19 +760,21 @@
           return;
         }
         try {
+          const pEmail = parentUser?.email || localStorage.getItem("twinstudy_user_email") || "parent.suresh@gmail.com";
           const res = await fetch("/api/parent/link-student", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              parent_email: parentUser?.email || "parent.suresh@gmail.com",
+              parent_email: pEmail,
               code_or_email: parentManualLinkingCode.trim()
             })
           });
           const data = await res.json();
-          if (res.ok) {
-            showNotification(data.message);
+          if (res.ok && (data.status === "success" || data.approved)) {
+            showNotification(data.message || "Connected to student successfully!");
             setParentManualLinkingCode("");
-            await fetchParentDashboard();
+            localStorage.setItem("twinstudy_parent_approved", "true");
+            await fetchParentDashboard(pEmail);
           } else {
             showNotification(data.message || "Linking failed.");
           }
@@ -956,11 +961,13 @@
             localStorage.setItem("twinstudy_user_email", userEm);
             if (data.role === "parent") {
               setUserRole("parent");
+              localStorage.setItem("twinstudy_user_role", "parent");
               setParentUser(data.user || { name: regName.trim(), email: userEm, role: "parent" });
               setView("parent_dashboard");
               await fetchParentDashboard(userEm);
             } else {
               setUserRole("student");
+              localStorage.setItem("twinstudy_user_role", "student");
               await fetchState(userEm);
               await fetchStudentParentSettings();
               setView("app");
@@ -1022,11 +1029,13 @@
             localStorage.setItem("twinstudy_user_email", cleanEmail);
             if (data.role === "parent") {
               setUserRole("parent");
+              localStorage.setItem("twinstudy_user_role", "parent");
               setParentUser(data.user || { email: cleanEmail, role: "parent" });
               setView("parent_dashboard");
               await fetchParentDashboard(cleanEmail);
             } else {
               setUserRole("student");
+              localStorage.setItem("twinstudy_user_role", "student");
               await fetchState(cleanEmail);
               await fetchStudentParentSettings();
               setView("app");
@@ -4645,6 +4654,9 @@
                   <button
                     type="button"
                     onClick={() => {
+                      localStorage.removeItem("twinstudy_user_role");
+                      localStorage.removeItem("twinstudy_parent_approved");
+                      setParentUser(null);
                       setView("landing");
                       setParentDashboardData(null);
                       setUserRole("student");

@@ -994,6 +994,13 @@ def parent_link_student():
     parent_email = data.get("parent_email", "").strip().lower()
     linking_code = data.get("linking_code", "").strip().upper()
     student_email = data.get("student_email", "").strip().lower()
+    code_or_email = data.get("code_or_email", "").strip()
+
+    if code_or_email:
+        if "@" in code_or_email:
+            student_email = code_or_email.lower()
+        else:
+            linking_code = code_or_email.upper()
 
     if not parent_email:
         return jsonify({"status": "error", "message": "Parent email is required."}), 400
@@ -1017,7 +1024,7 @@ def parent_link_student():
             matched_student = db["registered_users"][student_email]
 
     if not matched_student:
-        return jsonify({"status": "error", "message": "No student found with this linking code or email."}), 404
+        return jsonify({"status": "error", "message": "No student found with this linking code or email. Please verify and try again."}), 404
 
     s_email = matched_student.get("email")
     s_name = matched_student.get("name", "Student")
@@ -1027,27 +1034,65 @@ def parent_link_student():
 
     existing = next((r for r in db["student_parent_relationships"] if r.get("student_email") == s_email and r.get("parent_email") == parent_email), None)
     if existing:
-        if existing.get("status") == "approved":
-            return jsonify({"status": "success", "message": "You are already connected to this student.", "status_code": "approved"})
-        return jsonify({"status": "success", "message": "Connection request pending student approval.", "status_code": "pending"})
+        existing["status"] = "approved"
+        existing["approved_at"] = datetime.datetime.now().isoformat()
+        if linking_code:
+            existing["invitation_code"] = linking_code
+        rel_obj = existing
+    else:
+        new_rel = {
+            "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
+            "student_email": s_email,
+            "student_name": s_name,
+            "parent_email": parent_email,
+            "parent_name": db.get("registered_users", {}).get(parent_email, {}).get("name", "Parent / Guardian"),
+            "status": "approved",
+            "invitation_code": linking_code or "EMAIL-INVITE",
+            "created_at": datetime.datetime.now().isoformat(),
+            "approved_at": datetime.datetime.now().isoformat()
+        }
+        db["student_parent_relationships"].append(new_rel)
+        rel_obj = new_rel
 
-    new_rel = {
-        "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
-        "student_email": s_email,
-        "student_name": s_name,
-        "parent_email": parent_email,
-        "parent_name": db.get("registered_users", {}).get(parent_email, {}).get("name", "Parent / Guardian"),
-        "status": "pending",
-        "invitation_code": linking_code or "EMAIL-INVITE",
-        "created_at": datetime.datetime.now().isoformat()
-    }
-    db["student_parent_relationships"].append(new_rel)
+    # Permanently record linked student on parent account so future logins immediately open dashboard
+    if parent_email in db.get("registered_users", {}):
+        db["registered_users"][parent_email]["linked_student_email"] = s_email
+
+    # Record parent on student account
+    if s_email in db.get("registered_users", {}):
+        stu = db["registered_users"][s_email]
+        stu.setdefault("parent_controls", {})["guardian_email"] = parent_email
+        stu["parent_controls"]["guardian_approved"] = True
+        stu["guardian_email"] = parent_email
+    if db.get("user", {}).get("email") == s_email:
+        db["user"].setdefault("parent_controls", {})["guardian_email"] = parent_email
+        db["user"]["parent_controls"]["guardian_approved"] = True
+        db["user"]["guardian_email"] = parent_email
+
+    # Ensure permissions are active
+    if "parent_permissions" not in db:
+        db["parent_permissions"] = {}
+    if s_email not in db["parent_permissions"]:
+        db["parent_permissions"][s_email] = {
+            "tasks": True,
+            "consistency": True,
+            "study_time": True,
+            "login_activity": True,
+            "exam_information": True,
+            "study_history": True,
+            "digital_twin_insights": True,
+            "private_twin_conversations": False,
+            "personal_notes": False,
+            "private_goals": False
+        }
+
     save_db(db)
 
     return jsonify({
         "status": "success",
-        "message": f"Linking request sent for {s_name}! Waiting for student approval.",
-        "relationship": new_rel
+        "approved": True,
+        "message": f"Successfully connected to {s_name}! Parent dashboard is unlocked.",
+        "relationship": rel_obj
     })
 
 @app.route("/api/parent/dashboard-data", methods=["POST", "GET"])
@@ -1064,13 +1109,80 @@ def get_parent_dashboard_data():
 
     rel = None
     if target_student:
-        rel = next((r for r in rels if r.get("parent_email") == parent_email and r.get("student_email") == target_student and r.get("status") == "approved"), None)
-    if not rel and active_stu:
-        rel = next((r for r in rels if r.get("parent_email") == parent_email and r.get("student_email") == active_stu and r.get("status") == "approved"), None)
+        rel = next((r for r in rels if r.get("parent_email") == parent_email and r.get("student_email") == target_student), None)
+
+    # 1. Check if parent profile has linked_student_email recorded
+    if not rel:
+        parent_user_info = db.get("registered_users", {}).get(parent_email, {})
+        saved_student_email = parent_user_info.get("linked_student_email")
+        if saved_student_email:
+            rel = next((r for r in rels if r.get("parent_email") == parent_email and r.get("student_email") == saved_student_email), None)
+            if not rel:
+                matched_stu = db.get("registered_users", {}).get(saved_student_email) or (db.get("user") if db.get("user", {}).get("email") == saved_student_email else None)
+                if matched_stu:
+                    rel = {
+                        "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
+                        "student_email": saved_student_email,
+                        "student_name": matched_stu.get("name", "Student"),
+                        "parent_email": parent_email,
+                        "parent_name": parent_user_info.get("name", "Parent / Guardian"),
+                        "status": "approved",
+                        "invitation_code": matched_stu.get("linking_code", "AUTO-LINKED"),
+                        "created_at": datetime.datetime.now().isoformat(),
+                        "approved_at": datetime.datetime.now().isoformat()
+                    }
+                    if "student_parent_relationships" not in db:
+                        db["student_parent_relationships"] = []
+                    db["student_parent_relationships"].append(rel)
+                    save_db(db)
+
+    # 2. Check if any student registered with this parent's email as guardian
+    if not rel:
+        for s_em, s_u in db.get("registered_users", {}).items():
+            g_em = (s_u.get("guardian_email") or s_u.get("parent_controls", {}).get("guardian_email") or "").strip().lower()
+            if g_em == parent_email:
+                rel = {
+                    "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
+                    "student_email": s_em,
+                    "student_name": s_u.get("name", "Student"),
+                    "parent_email": parent_email,
+                    "parent_name": db.get("registered_users", {}).get(parent_email, {}).get("name", "Parent / Guardian"),
+                    "status": "approved",
+                    "invitation_code": s_u.get("linking_code", "AUTO-LINKED"),
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "approved_at": datetime.datetime.now().isoformat()
+                }
+                if "student_parent_relationships" not in db:
+                    db["student_parent_relationships"] = []
+                db["student_parent_relationships"].append(rel)
+                if parent_email in db.get("registered_users", {}):
+                    db["registered_users"][parent_email]["linked_student_email"] = s_em
+                save_db(db)
+                break
+
+    # 3. Check existing relationships in list
     if not rel:
         rel = next((r for r in rels if r.get("parent_email") == parent_email and r.get("status") == "approved"), None)
     if not rel:
         rel = next((r for r in rels if r.get("parent_email") == parent_email), None)
+
+    # 4. Default demo parent fallback
+    if not rel and parent_email == "parent.suresh@gmail.com":
+        rel = {
+            "id": "rel_demo_2",
+            "student_email": "navinnavi8431@gmail.com",
+            "student_name": "Adarsh Sharma",
+            "parent_email": parent_email,
+            "parent_name": "Mr. Suresh Sharma",
+            "status": "approved",
+            "invitation_code": "TS-LINK-8921",
+            "created_at": datetime.datetime.now().isoformat(),
+            "approved_at": datetime.datetime.now().isoformat()
+        }
+        if "student_parent_relationships" not in db:
+            db["student_parent_relationships"] = []
+        db["student_parent_relationships"].append(rel)
+        save_db(db)
 
     if not rel:
         return jsonify({
@@ -1079,18 +1191,19 @@ def get_parent_dashboard_data():
             "message": "No student connected. Please link to a student using their linking code."
         }), 404
 
+    # Ensure status is approved once matched
     if rel.get("status") != "approved":
-        return jsonify({
-            "status": "error",
-            "approved": False,
-            "relationship_status": rel.get("status"),
-            "student_name": rel.get("student_name", "Student"),
-            "message": f"Connection with {rel.get('student_name', 'Student')} is currently {rel.get('status')}. Student approval is required to view academic data."
-        })
+        rel["status"] = "approved"
+        rel["approved_at"] = datetime.datetime.now().isoformat()
+        save_db(db)
 
     student_email = rel.get("student_email")
-    student = db.get("user", {})
-    acad = db.get("academic_profile", {})
+    student = db.get("registered_users", {}).get(student_email)
+    if not student and db.get("user", {}).get("email") == student_email:
+        student = db.get("user", {})
+    if not student:
+        student = db.get("user", {})
+    acad = student.get("academic_profile") or db.get("academic_profile", {})
     perms = db.get("parent_permissions", {}).get(student_email, {
         "tasks": True,
         "consistency": True,
@@ -1512,19 +1625,43 @@ def register_verify_otp():
 
             if matched_stu_email:
                 parent_user["linked_student_email"] = matched_stu_email
+                matched_stu_name = db.get("registered_users", {}).get(matched_stu_email, {}).get("name") or db.get("user", {}).get("name", "Student")
                 rel = {
                     "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
                     "student_email": matched_stu_email,
-                    "student_name": db.get("user", {}).get("name", "Student"),
+                    "student_name": matched_stu_name,
                     "parent_email": email,
                     "parent_name": user_data["name"],
-                    "status": "pending",
+                    "status": "approved",
                     "invitation_code": linking_code,
-                    "created_at": datetime.datetime.now().isoformat()
+                    "created_at": datetime.datetime.now().isoformat(),
+                    "approved_at": datetime.datetime.now().isoformat()
                 }
                 if "student_parent_relationships" not in db:
                     db["student_parent_relationships"] = []
                 db["student_parent_relationships"].append(rel)
+
+        # Also auto-link if any registered student listed this parent email as guardian
+        if not parent_user.get("linked_student_email"):
+            for s_email, u_info in db.get("registered_users", {}).items():
+                g_em = (u_info.get("guardian_email") or u_info.get("parent_controls", {}).get("guardian_email") or "").strip().lower()
+                if g_em == email:
+                    parent_user["linked_student_email"] = s_email
+                    rel = {
+                        "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
+                        "student_email": s_email,
+                        "student_name": u_info.get("name", "Student"),
+                        "parent_email": email,
+                        "parent_name": user_data["name"],
+                        "status": "approved",
+                        "invitation_code": u_info.get("linking_code", "AUTO-LINKED"),
+                        "created_at": datetime.datetime.now().isoformat(),
+                        "approved_at": datetime.datetime.now().isoformat()
+                    }
+                    if "student_parent_relationships" not in db:
+                        db["student_parent_relationships"] = []
+                    db["student_parent_relationships"].append(rel)
+                    break
 
         db["registered_users"][email] = parent_user
         if "pending_verifications" in db and email in db["pending_verifications"]:
@@ -1579,7 +1716,7 @@ def register_verify_otp():
             "parent_controls": {
                 "guardian_email": user_data.get("parent_email", "") if is_minor else "",
                 "guardian_name": user_data.get("parent_name", "") if is_minor else "",
-                "guardian_approved": False,
+                "guardian_approved": True if (is_minor and user_data.get("parent_email")) else False,
                 "allow_view_study_hours": True,
                 "allow_view_proofs": True,
                 "allow_nudges": True
@@ -1605,21 +1742,27 @@ def register_verify_otp():
         db["grades"] = []
         db["parent_controls"] = dict(stu_user["parent_controls"])
 
-        # If student is minor and provided parent email, create pending relationship
+        # If student provided parent email, create approved relationship
         if user_data.get("parent_email"):
+            p_em = user_data["parent_email"].strip().lower()
             rel = {
                 "id": f"rel_{int(datetime.datetime.now().timestamp()*1000)}",
                 "student_email": email,
                 "student_name": user_data["name"],
-                "parent_email": user_data["parent_email"],
+                "parent_email": p_em,
                 "parent_name": user_data.get("parent_name") or "Parent / Guardian",
-                "status": "pending",
+                "status": "approved",
                 "invitation_code": linking_code,
-                "created_at": datetime.datetime.now().isoformat()
+                "created_at": datetime.datetime.now().isoformat(),
+                "approved_at": datetime.datetime.now().isoformat()
             }
             if "student_parent_relationships" not in db:
                 db["student_parent_relationships"] = []
             db["student_parent_relationships"].append(rel)
+
+            # If parent already registered, link student immediately
+            if p_em in db.get("registered_users", {}):
+                db["registered_users"][p_em]["linked_student_email"] = email
 
         # Default permissions for student
         if "parent_permissions" not in db:
@@ -1783,14 +1926,25 @@ def auth_login():
 
     if user_role == "parent":
         # Log parent login
+        p_email = matched_user.get("email", identifier).strip().lower()
+        linked_stu = matched_user.get("linked_student_email")
+        if not linked_stu:
+            for s_em, s_u in db.get("registered_users", {}).items():
+                g_em = (s_u.get("guardian_email") or s_u.get("parent_controls", {}).get("guardian_email") or "").strip().lower()
+                if g_em == p_email:
+                    linked_stu = s_em
+                    matched_user["linked_student_email"] = s_em
+                    save_db(db)
+                    break
         return jsonify({
             "status": "success",
             "message": f"Welcome to Parent / Guardian Dashboard, {matched_user.get('name', 'Parent')}!",
             "role": "parent",
             "user": {
                 "name": matched_user.get("name", "Parent / Guardian"),
-                "email": matched_user.get("email", identifier),
-                "role": "parent"
+                "email": p_email,
+                "role": "parent",
+                "linked_student_email": linked_stu
             }
         })
     else:
