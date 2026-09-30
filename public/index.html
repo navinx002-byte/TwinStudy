@@ -620,9 +620,11 @@
         } catch (e) {}
       };
 
-      const fetchState = async () => {
+      const fetchState = async (customEmail) => {
         try {
-          const res = await fetch("/api/state");
+          const emailParam = customEmail || localStorage.getItem("twinstudy_user_email") || "";
+          const url = emailParam ? `/api/state?email=${encodeURIComponent(emailParam)}` : "/api/state";
+          const res = await fetch(url);
           const data = await res.json();
           setState(data);
           if (data.academic_profile) {
@@ -634,6 +636,7 @@
             }));
           }
           if (data.subjects) setSubjectsList(data.subjects);
+          else setSubjectsList([]);
           if (data.user) {
             if (data.user.name) setSettingsName(data.user.name);
             if (data.user.dob) setSettingsDob(data.user.dob);
@@ -648,8 +651,11 @@
           }
           if (data.parent_controls && data.parent_controls.guardian_email) {
             setSettingsGuardianEmail(data.parent_controls.guardian_email);
+          } else {
+            setSettingsGuardianEmail("");
           }
           if (data.classes) setClassesList(data.classes);
+          else setClassesList([]);
           if (data.notifications) setNotificationsList(data.notifications);
           await fetchTwinHealth();
           await fetchGrades();
@@ -883,13 +889,8 @@
             setRegOtpSent(true);
             setRegCountdown(60);
             setAuthSuccess(data.message);
-            if (data.otp || data.dev_otp) {
-              setRegOtp(data.otp || data.dev_otp);
-              showNotification(`Code generated: ${data.otp || data.dev_otp}`);
-            } else {
-              setRegOtp("");
-              showNotification(`Verification code dispatched to ${regEmail}!`);
-            }
+            setRegOtp("");
+            showNotification(`✉️ Verification code sent to ${regEmail}! Please check your email inbox.`);
           } else {
             setAuthError(data.message || "Failed to send email verification code.");
           }
@@ -949,20 +950,26 @@
           const data = await res.json();
           if (res.ok) {
             showNotification(data.message);
+            const userEm = regEmail.trim().toLowerCase();
+            localStorage.setItem("twinstudy_user_email", userEm);
             if (data.role === "parent") {
               setUserRole("parent");
-              setParentUser(data.user || { name: regName.trim(), email: regEmail.trim(), role: "parent" });
+              setParentUser(data.user || { name: regName.trim(), email: userEm, role: "parent" });
               setView("parent_dashboard");
-              await fetchParentDashboard(regEmail.trim());
+              await fetchParentDashboard(userEm);
             } else {
               setUserRole("student");
-              await fetchState();
+              await fetchState(userEm);
               await fetchStudentParentSettings();
               setView("app");
-              setAcademicProfile(prev => ({
-                ...prev,
-                student_name: regName.trim()
-              }));
+              setAcademicProfile({
+                student_name: regName.trim(),
+                college: "",
+                course: "",
+                semester: "",
+                specialization: "cs",
+                academic_year: "2026-2027"
+              });
               setSetupStep(1);
               setShowSetupModal(true);
             }
@@ -981,7 +988,7 @@
         setAuthError(null);
         setAuthSuccess(null);
 
-        const cleanEmail = (loginIdentifier || "").trim();
+        const cleanEmail = (loginIdentifier || "").trim().toLowerCase();
         const cleanPass = (loginPassword || "").trim();
 
         if (!cleanEmail) {
@@ -1010,6 +1017,7 @@
           const data = await res.json();
           if (res.ok) {
             showNotification(data.message);
+            localStorage.setItem("twinstudy_user_email", cleanEmail);
             if (data.role === "parent") {
               setUserRole("parent");
               setParentUser(data.user || { email: cleanEmail, role: "parent" });
@@ -1017,10 +1025,10 @@
               await fetchParentDashboard(cleanEmail);
             } else {
               setUserRole("student");
-              await fetchState();
+              await fetchState(cleanEmail);
               await fetchStudentParentSettings();
               setView("app");
-              if (data.needs_onboarding) {
+              if (!data.user?.grade_level || data.user?.grade_level === "Enrolled Student" || !data.user?.college) {
                 setSetupStep(1);
                 setShowSetupModal(true);
               }
@@ -4316,16 +4324,37 @@
                             </div>
                           </div>
 
-                          <div>
-                            <label className="block text-navySlate font-bold mb-1">Guardian / Parent Email (Oversight Alerts)</label>
-                            <input
-                              type="email"
-                              value={settingsGuardianEmail}
-                              onChange={(e) => setSettingsGuardianEmail(e.target.value)}
-                              placeholder="e.g. parent.guardian@gmail.com"
-                              className="w-full px-3 py-2 rounded-xl border border-navySlate/20 bg-white text-navySlate"
-                            />
-                          </div>
+                          {/* Guardian Email ONLY for Minor Students (<18) */}
+                          {((parseInt(settingsAge) < 18) || (state?.user?.is_minor)) ? (
+                            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 space-y-1.5">
+                              <div className="flex justify-between items-center">
+                                <label className="block text-navySlate font-bold text-xs">
+                                  👨‍👩‍👧 Minor Student (&lt;18): Parent / Guardian Email *
+                                </label>
+                                <span className="text-[10px] bg-amber-200/60 text-amber-900 font-extrabold px-2 py-0.5 rounded-full">
+                                  Parent Oversight
+                                </span>
+                              </div>
+                              <input
+                                type="email"
+                                value={settingsGuardianEmail}
+                                onChange={(e) => setSettingsGuardianEmail(e.target.value)}
+                                placeholder="e.g. parent.guardian@gmail.com"
+                                className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white text-navySlate text-xs focus:outline-none focus:border-cyanAccent"
+                              />
+                              <p className="text-[10px] text-amber-800">
+                                As a minor student under 18, your parent or guardian can view verified study hours and supportive nudges.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-navySlate/70 flex items-center justify-between">
+                              <div>
+                                <span className="font-bold text-navySlate">🎓 Independent Adult Student (Age {settingsAge || state?.user?.age || "18+"})</span>
+                                <p className="text-[11px] text-navySlate/50">Full privacy sovereignty. No parent/guardian oversight required.</p>
+                              </div>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">Self-Governed</span>
+                            </div>
+                          )}
 
                           <div className="pt-2 flex justify-end">
                             <button

@@ -392,7 +392,7 @@ def send_email_via_smtp(to_email: str, subject: str, otp_code: str, action_type=
         msg.attach(MIMEText(f"Your TwinStudy {action_type} OTP code is: {otp_code}. Valid for 10 minutes.", "plain"))
         msg.attach(MIMEText(html_body, "html"))
 
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=3)
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
         server.ehlo()
         server.starttls()
         clean_pass = password.replace(" ", "").strip()
@@ -615,6 +615,77 @@ def simulate_decision(query: str, db: dict) -> dict:
 @app.route("/api/state", methods=["GET"])
 def get_state():
     data = load_db()
+    email = request.args.get("email", "").strip().lower()
+    if not email:
+        email = request.headers.get("x-user-email", "").strip().lower()
+
+    if email and "registered_users" in data and email in data["registered_users"]:
+        u = data["registered_users"][email]
+        user_state = {
+            "user": {
+                "name": u.get("name", "Student"),
+                "email": u.get("email", email),
+                "dob": u.get("dob", ""),
+                "age": u.get("age", 20),
+                "is_minor": u.get("is_minor", False),
+                "role": u.get("role", "student"),
+                "role_display": u.get("role_display", "Student"),
+                "points": u.get("points", 100),
+                "streak_days": u.get("streak_days", 1),
+                "daily_study_hours": u.get("daily_study_hours", 3.0),
+                "focus_duration_minutes": u.get("focus_duration_minutes", 45),
+                "learning_preference": u.get("learning_preference", "Practice problems and step-by-step review"),
+                "preferred_study_time": u.get("preferred_study_time", "Evening"),
+                "goals": u.get("goals", ["Build strong study discipline", "Complete coursework on time"]),
+                "college": u.get("college") or u.get("academic_profile", {}).get("college", ""),
+                "grade_level": u.get("grade_level") or (f"{u.get('academic_profile', {}).get('course', '')} ({u.get('academic_profile', {}).get('semester', '')})" if u.get("academic_profile", {}).get("course") else "Enrolled Student"),
+                "guardian_email": u.get("guardian_email", "") if u.get("is_minor") else "",
+                "linking_code": u.get("linking_code", "")
+            },
+            "academic_profile": u.get("academic_profile") or {
+                "student_name": u.get("name", "Student"),
+                "college": "",
+                "course": "",
+                "semester": "",
+                "specialization": "cs",
+                "academic_year": "2026-2027"
+            },
+            "subjects": u.get("subjects") or [],
+            "classes": u.get("classes") or [],
+            "tasks": u.get("tasks") or [],
+            "grades": u.get("grades") or [],
+            "subject_targets": u.get("subject_targets") or {},
+            "behavior_patterns": u.get("behavior_patterns") or DEFAULT_BEHAVIOR_PATTERNS,
+            "decisions": u.get("decisions") or [],
+            "parent_controls": u.get("parent_controls") or {
+                "guardian_email": u.get("guardian_email", "") if u.get("is_minor") else "",
+                "guardian_name": u.get("parent_name", "") if u.get("is_minor") else "",
+                "guardian_approved": False,
+                "allow_view_study_hours": True,
+                "allow_view_proofs": True,
+                "allow_nudges": True
+            },
+            "privacy_permissions": u.get("privacy_permissions") or {
+                "share_timetable": True,
+                "share_deadlines": True,
+                "share_history": True,
+                "share_learning_preferences": True,
+                "share_goals": True
+            },
+            "notifications": u.get("notifications") or [
+                {
+                    "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+                    "title": f"Welcome to TwinStudy, {u.get('name')}! 🎓",
+                    "description": "Complete your MyStudyLife timetable setup to personalize your twin.",
+                    "time": "Just now",
+                    "type": "reward",
+                    "read": False
+                }
+            ],
+            "registered_users": data.get("registered_users", {})
+        }
+        return jsonify(user_state)
+
     return jsonify(data)
 
 @app.route("/api/academic/save", methods=["POST"])
@@ -721,17 +792,22 @@ def update_student_profile():
         except Exception:
             pass
 
-    if data.get("guardian_email"):
-        guard_email = data["guardian_email"].strip().lower()
-        user["guardian_email"] = guard_email
-        if "parent_controls" not in db:
-            db["parent_controls"] = {}
-        db["parent_controls"]["guardian_email"] = guard_email
+    if user.get("is_minor"):
+        if data.get("guardian_email"):
+            guard_email = data["guardian_email"].strip().lower()
+            user["guardian_email"] = guard_email
+            if "parent_controls" not in db:
+                db["parent_controls"] = {}
+            db["parent_controls"]["guardian_email"] = guard_email
+    else:
+        user["guardian_email"] = ""
+        if "parent_controls" in db and "guardian_email" in db["parent_controls"]:
+            db["parent_controls"]["guardian_email"] = ""
 
     db["user"] = user
 
     # Sync to registered_users for active email and aliases
-    email = user.get("email")
+    email = (data.get("email") or user.get("email") or "").strip().lower()
     emails_to_sync = [email] if email else []
     if email in ["navinnavi8431@gmail.com", "navin.x002@gmail.com"]:
         emails_to_sync = ["navinnavi8431@gmail.com", "navin.x002@gmail.com"]
@@ -746,6 +822,8 @@ def update_student_profile():
             reg_u["dob"] = user.get("dob")
             reg_u["age"] = user.get("age")
             reg_u["is_minor"] = user.get("is_minor")
+            reg_u["guardian_email"] = user.get("guardian_email", "")
+            reg_u["daily_study_hours"] = user.get("daily_study_hours", 3.0)
             if "academic_profile" not in reg_u or not isinstance(reg_u["academic_profile"], dict):
                 reg_u["academic_profile"] = {}
             reg_u["academic_profile"]["student_name"] = user.get("name")
@@ -1335,23 +1413,16 @@ def register_send_otp():
     if success:
         return jsonify({
             "status": "success",
-            "message": f"A 6-digit verification code has been dispatched to {email}. Valid for 10 minutes.",
+            "message": f"A 6-digit verification code has been dispatched to {email}. Please check your Gmail inbox (and Spam folder).",
             "email": email,
             "role": role,
-            "otp": otp,
-            "dev_otp": otp,
             "smtp_sent": True
         })
     else:
         return jsonify({
-            "status": "success",
-            "message": f"Verification code generated! Your 6-digit code is: {otp}",
-            "email": email,
-            "role": role,
-            "otp": otp,
-            "dev_otp": otp,
-            "smtp_sent": False
-        })
+            "status": "error",
+            "message": f"Could not dispatch verification email to {email}: {smtp_msg}."
+        }), 400
 
 @app.route("/api/auth/register-verify-otp", methods=["POST"])
 def register_verify_otp():
@@ -1444,29 +1515,70 @@ def register_verify_otp():
         })
     else:
         # Student registration
+        # Student registration with fresh, isolated personal data
         linking_code = f"TS-LINK-{random.randint(1000, 9999)}"
+        is_minor = bool(user_data.get("is_minor"))
         stu_user = {
             "name": user_data["name"],
             "dob": user_data["dob"],
             "age": user_data["age"],
-            "is_minor": user_data["is_minor"],
+            "is_minor": is_minor,
             "email": email,
             "password": user_data["password"],
-            "role": "student",
-            "role_display": "Student (Minor)" if user_data["is_minor"] else "Student",
+            "role": "student_minor" if is_minor else "student",
+            "role_display": "Student (Minor)" if is_minor else "Student",
             "linking_code": linking_code,
-            "registered_at": datetime.datetime.now().isoformat()
+            "registered_at": datetime.datetime.now().isoformat(),
+            "points": 100,
+            "streak_days": 1,
+            "daily_study_hours": 3.0,
+            "focus_duration_minutes": 45,
+            "learning_preference": "Practice problems and step-by-step review",
+            "preferred_study_time": "Evening",
+            "goals": ["Build strong study discipline", "Complete coursework on time"],
+            "college": "",
+            "grade_level": "Enrolled Student",
+            "guardian_email": user_data.get("parent_email", "") if is_minor else "",
+            "academic_profile": {
+                "student_name": user_data["name"],
+                "college": "",
+                "course": "",
+                "semester": "",
+                "specialization": "cs",
+                "academic_year": "2026-2027"
+            },
+            "subjects": [],
+            "classes": [],
+            "tasks": [],
+            "grades": [],
+            "parent_controls": {
+                "guardian_email": user_data.get("parent_email", "") if is_minor else "",
+                "guardian_name": user_data.get("parent_name", "") if is_minor else "",
+                "guardian_approved": False,
+                "allow_view_study_hours": True,
+                "allow_view_proofs": True,
+                "allow_nudges": True
+            },
+            "notifications": [
+                {
+                    "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+                    "title": f"Welcome to TwinStudy, {user_data['name']}! 🎓",
+                    "description": "Complete your MyStudyLife timetable setup to personalize your twin.",
+                    "time": "Just now",
+                    "type": "reward",
+                    "read": False
+                }
+            ]
         }
         db["registered_users"][email] = stu_user
 
-        db["user"]["name"] = user_data["name"]
-        db["user"]["email"] = email
-        db["user"]["dob"] = user_data["dob"]
-        db["user"]["age"] = user_data["age"]
-        db["user"]["is_minor"] = user_data["is_minor"]
-        db["user"]["role"] = "student"
-        db["user"]["role_display"] = "Student (Minor)" if user_data["is_minor"] else "Student"
-        db["user"]["linking_code"] = linking_code
+        db["user"] = dict(stu_user)
+        db["academic_profile"] = dict(stu_user["academic_profile"])
+        db["subjects"] = []
+        db["classes"] = []
+        db["tasks"] = []
+        db["grades"] = []
+        db["parent_controls"] = dict(stu_user["parent_controls"])
 
         # If student is minor and provided parent email, create pending relationship
         if user_data.get("parent_email"):
@@ -1556,18 +1668,13 @@ def resend_otp():
         return jsonify({
             "status": "success",
             "message": f"A new 6-digit verification code has been dispatched to {email}. Valid for 10 minutes.",
-            "otp": new_otp,
-            "dev_otp": new_otp,
             "smtp_sent": True
         })
     else:
         return jsonify({
-            "status": "success",
-            "message": f"Verification code generated! Your new code is: {new_otp}",
-            "otp": new_otp,
-            "dev_otp": new_otp,
-            "smtp_sent": False
-        })
+            "status": "error",
+            "message": f"Could not resend email to {email}: {smtp_msg}."
+        }), 400
 
 @app.route("/api/auth/login", methods=["POST"])
 def auth_login():
@@ -1644,18 +1751,48 @@ def auth_login():
             db["activity_logs"] = []
         db["activity_logs"].insert(0, act_entry)
 
-        is_minor = matched_user.get("is_minor", False)
-        db["user"]["name"] = matched_user.get("name", db["user"]["name"])
-        db["user"]["email"] = matched_user.get("email", identifier)
-        db["user"]["dob"] = matched_user.get("dob", db["user"].get("dob"))
-        db["user"]["age"] = matched_user.get("age", db["user"].get("age", 20))
-        db["user"]["is_minor"] = is_minor
-        db["user"]["role"] = "student"
-        db["user"]["role_display"] = "Student (Minor)" if is_minor else "Student"
-        if matched_user.get("linking_code"):
-            db["user"]["linking_code"] = matched_user["linking_code"]
-        elif "linking_code" not in db["user"]:
-            db["user"]["linking_code"] = "TS-LINK-8921"
+        is_minor = bool(matched_user.get("is_minor"))
+        stu_email = matched_user.get("email", identifier)
+        db["user"] = {
+            "name": matched_user.get("name", "Student"),
+            "email": stu_email,
+            "dob": matched_user.get("dob", ""),
+            "age": matched_user.get("age", 20),
+            "is_minor": is_minor,
+            "role": "student_minor" if is_minor else "student",
+            "role_display": "Student (Minor)" if is_minor else "Student",
+            "points": matched_user.get("points", 100),
+            "streak_days": matched_user.get("streak_days", 1),
+            "daily_study_hours": matched_user.get("daily_study_hours", 3.0),
+            "focus_duration_minutes": matched_user.get("focus_duration_minutes", 45),
+            "learning_preference": matched_user.get("learning_preference", "Practice problems and step-by-step review"),
+            "preferred_study_time": matched_user.get("preferred_study_time", "Evening"),
+            "goals": matched_user.get("goals", ["Build strong study discipline", "Complete coursework on time"]),
+            "college": matched_user.get("college") or matched_user.get("academic_profile", {}).get("college", ""),
+            "grade_level": matched_user.get("grade_level") or (f"{matched_user.get('academic_profile', {}).get('course', '')} ({matched_user.get('academic_profile', {}).get('semester', '')})" if matched_user.get("academic_profile", {}).get("course") else "Enrolled Student"),
+            "guardian_email": matched_user.get("guardian_email", "") if is_minor else "",
+            "linking_code": matched_user.get("linking_code", "TS-LINK-8921")
+        }
+        db["academic_profile"] = matched_user.get("academic_profile") or {
+            "student_name": matched_user.get("name", "Student"),
+            "college": "",
+            "course": "",
+            "semester": "",
+            "specialization": "cs",
+            "academic_year": "2026-2027"
+        }
+        db["subjects"] = matched_user.get("subjects") or []
+        db["classes"] = matched_user.get("classes") or []
+        db["tasks"] = matched_user.get("tasks") or []
+        db["grades"] = matched_user.get("grades") or []
+        db["parent_controls"] = matched_user.get("parent_controls") or {
+            "guardian_email": matched_user.get("guardian_email", "") if is_minor else "",
+            "guardian_name": matched_user.get("parent_name", "") if is_minor else "",
+            "guardian_approved": False,
+            "allow_view_study_hours": True,
+            "allow_view_proofs": True,
+            "allow_nudges": True
+        }
 
         save_db(db)
 
