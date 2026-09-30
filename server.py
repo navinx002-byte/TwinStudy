@@ -2157,6 +2157,34 @@ for rule in list(app.url_map.iter_rules()):
             except Exception:
                 pass
 
+# --- VERCEL SERVERLESS GATEWAY DISPATCHER ---
+# Vercel rewrites forward /api/* to /api/index.py?__path=*
+# This gateway dynamically dispatches to the correct endpoint
+@app.route("/api/index.py", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+@app.route("/index.py", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+def vercel_serverless_gateway():
+    subpath = (request.args.get("__path") or request.args.get("match") or "").strip("/")
+    if not subpath:
+        subpath = "state"
+    target_api = "/api/" + subpath
+    target_raw = "/" + subpath
+
+    adapter = app.url_map.bind_to_environ(request.environ)
+    for try_path in [target_api, target_raw]:
+        try:
+            endpoint, values = adapter.match(try_path, method=request.method)
+            # Avoid infinite recursion
+            if endpoint not in ("vercel_serverless_gateway", "static"):
+                return app.view_functions[endpoint](**values)
+        except Exception:
+            continue
+
+    return jsonify({
+        "status": "error",
+        "message": f"Endpoint not found: {subpath}",
+        "queried_path": subpath
+    }), 404
+
 # --- STATIC ASSET SERVING ---
 
 @app.route("/")
