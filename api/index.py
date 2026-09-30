@@ -32,3 +32,4 @@ def _vercel_wsgi_app(environ, start_response):
     return _original_wsgi_app(environ, start_response)
 
 app.wsgi_app = _vercel_wsgi_app
+handler = app

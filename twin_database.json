@@ -8,8 +8,8 @@
     "is_minor": true,
     "role": "student_minor",
     "role_display": "Student (Minor)",
-    "points": 325,
-    "streak_days": 3,
+    "points": 475,
+    "streak_days": 4,
     "daily_study_hours": 3.0,
     "focus_duration_minutes": 45,
     "learning_preference": "Practice problems and step-by-step review",
@@ -118,9 +118,17 @@
         }
       ],
       "role": "student",
-      "points": 325,
-      "streak_days": 3,
+      "points": 475,
+      "streak_days": 4,
       "notifications": [
+        {
+          "id": "notif_1790802071789",
+          "title": "Proof Verified: Complete erj Problem Set & Module Review (+150 pts)",
+          "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+          "time": "Just now",
+          "type": "reward",
+          "read": false
+        },
         {
           "id": "notif_1790801437111",
           "title": "Proof Verified: Complete ge Problem Set & Module Review (+125 pts)",
@@ -536,6 +544,14 @@
     "allow_nudges": true
   },
   "notifications": [
+    {
+      "id": "notif_1790802071789",
+      "title": "Proof Verified: Complete erj Problem Set & Module Review (+150 pts)",
+      "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
     {
       "id": "notif_1790801437111",
       "title": "Proof Verified: Complete ge Problem Set & Module Review (+125 pts)",
@@ -1031,6 +1047,38 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act_1790802057427",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "02:30 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801745959",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:25 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801645911",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:24 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790801645753",
+      "user_email": "navin.x002@gmail.com",
+      "login_time": "02:24 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
     {
       "id": "act_1790801422693",
       "user_email": "navinnavi8431@gmail.com",

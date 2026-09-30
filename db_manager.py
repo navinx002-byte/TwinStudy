@@ -20,8 +20,26 @@ MYSQL_USER = os.environ.get("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.environ.get("MYSQL_PASSWORD", "")
 MYSQL_DATABASE = os.environ.get("MYSQL_DATABASE", "twinstudy")
 
-SQLITE_PATH = os.path.join(os.path.dirname(__file__), "twin_relational.db")
-LEGACY_JSON_PATH = os.path.join(os.path.dirname(__file__), "twin_database.json")
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+if IS_VERCEL:
+    SQLITE_PATH = "/tmp/twin_relational.db"
+    LEGACY_JSON_PATH = "/tmp/twin_database.json"
+    bundled_sqlite = os.path.join(os.path.dirname(__file__), "twin_relational.db")
+    bundled_json = os.path.join(os.path.dirname(__file__), "twin_database.json")
+    import shutil
+    if not os.path.exists(SQLITE_PATH) and os.path.exists(bundled_sqlite):
+        try:
+            shutil.copyfile(bundled_sqlite, SQLITE_PATH)
+        except Exception:
+            pass
+    if not os.path.exists(LEGACY_JSON_PATH) and os.path.exists(bundled_json):
+        try:
+            shutil.copyfile(bundled_json, LEGACY_JSON_PATH)
+        except Exception:
+            pass
+else:
+    SQLITE_PATH = os.path.join(os.path.dirname(__file__), "twin_relational.db")
+    LEGACY_JSON_PATH = os.path.join(os.path.dirname(__file__), "twin_database.json")
 
 def safe_int(val, default=0):
     try:

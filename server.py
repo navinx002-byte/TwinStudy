@@ -30,7 +30,18 @@ import ai_service
 app = Flask(__name__, static_folder="public", static_url_path="")
 CORS(app)
 
-DB_FILE = os.path.join(os.path.dirname(__file__), "twin_database.json")
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+if IS_VERCEL:
+    DB_FILE = "/tmp/twin_database.json"
+    bundled_json = os.path.join(os.path.dirname(__file__), "twin_database.json")
+    if not os.path.exists(DB_FILE) and os.path.exists(bundled_json):
+        import shutil
+        try:
+            shutil.copyfile(bundled_json, DB_FILE)
+        except Exception:
+            pass
+else:
+    DB_FILE = os.path.join(os.path.dirname(__file__), "twin_database.json")
 EMAIL_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "email_config.json")
 
 def get_auth_user(req):
