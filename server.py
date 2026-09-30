@@ -2163,11 +2163,20 @@ for rule in list(app.url_map.iter_rules()):
 def serve_index():
     return send_from_directory("public", "index.html")
 
-@app.route("/<path:path>")
-def serve_static(path):
-    if os.path.exists(os.path.join("public", path)):
-        return send_from_directory("public", path)
-    return send_from_directory("public", "index.html")
+@app.errorhandler(404)
+def page_not_found(e):
+    # If it's a browser page request, serve index.html
+    accept = request.headers.get("Accept", "")
+    if "text/html" in accept and not request.path.startswith("/api"):
+        return send_from_directory("public", "index.html")
+    return jsonify({
+        "error": "404 Not Found",
+        "path": request.path,
+        "environ_path_info": request.environ.get("PATH_INFO"),
+        "environ_script_name": request.environ.get("SCRIPT_NAME"),
+        "url": request.url,
+        "x_matched_path": request.headers.get("x-matched-path")
+    }), 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
