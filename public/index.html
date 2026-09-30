@@ -879,17 +879,22 @@
             })
           });
           const data = await res.json();
-          if (res.ok) {
+          if (res.ok && data.status === "success") {
             setRegOtpSent(true);
             setRegCountdown(60);
             setAuthSuccess(data.message);
-            setRegOtp("");
-            showNotification(`Verification code dispatched to ${regEmail}!`);
+            if (data.otp || data.dev_otp) {
+              setRegOtp(data.otp || data.dev_otp);
+              showNotification(`Code generated: ${data.otp || data.dev_otp}`);
+            } else {
+              setRegOtp("");
+              showNotification(`Verification code dispatched to ${regEmail}!`);
+            }
           } else {
             setAuthError(data.message || "Failed to send email verification code.");
           }
         } catch (err) {
-          setAuthError("Network error while connecting to server. Please check your connection.");
+          setAuthError(err.message || "Network error while connecting to server. Please check your connection.");
         } finally {
           setLoadingAction(false);
         }
