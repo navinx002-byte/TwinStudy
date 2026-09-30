@@ -24,12 +24,38 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from db_manager import db_mgr
+import ai_service
 
 app = Flask(__name__, static_folder="public", static_url_path="")
 CORS(app)
 
 DB_FILE = os.path.join(os.path.dirname(__file__), "twin_database.json")
 EMAIL_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "email_config.json")
+
+def get_auth_user(req):
+    auth_header = req.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        token = req.args.get("token") or req.cookies.get("twinstudy_token")
+    if token:
+        user = db_mgr.get_user_by_token(token)
+        if user:
+            return user
+    email = req.args.get("email")
+    if not email and req.is_json:
+        data = req.get_json(silent=True) or {}
+        email = data.get("email")
+    if not email:
+        email = req.headers.get("x-user-email")
+    if email:
+        user = db_mgr.get_user_by_email(email)
+        if user:
+            return user
+    # Fallback to demo user if present in DB
+    return db_mgr.get_user_by_email("navinnavi8431@gmail.com")
 
 # In-memory OTP storage: email -> {code, purpose, data, attempts_left, expires_at, last_sent_at}
 verification_codes = {}
@@ -410,215 +436,29 @@ def send_email_via_smtp(to_email: str, subject: str, otp_code: str, action_type=
 
 # --- DYNAMIC CONTEXT-AWARE SIMULATION & WHAT-IF ENGINE ---
 
-def simulate_decision(query: str, db: dict) -> dict:
-    q_lower = query.lower()
-    subjects = db.get("subjects", [])
-    classes = db.get("classes", [])
-
-    # Extract days if mentioned (e.g. 3 days, 2 days, 4-day)
-    day_match = re.search(r'(\d+)\s*-?\s*day', q_lower)
-    days_count = int(day_match.group(1)) if day_match else 2
-
-    # 1. SCENARIO: TRIP / VACATION / TRAVEL / OUTING
-    if any(k in q_lower for k in ["trip", "travel", "vacation", "holiday", "tour", "outing", "party", "go to", "leave", "weekend", "picnic"]):
-        fut_a = {
-            "focus": f"Take {days_count}-Day Trip Without Pre-Study",
-            "exam_score_projected": f"{max(50, 72 - days_count * 5)}% (-{days_count * 7}% drop due to missed review)",
-            "assignment_completion": f"Low ({max(15, 35 - days_count * 8)}% - Critical Risk of Late Penalty)",
-            "deadline_risk": f"Critical (Backlog accumulates during {days_count * 24}h absence)",
-            "fatigue": f"High Post-Trip Anxiety ({min(92, 60 + days_count * 7)}% stress upon return)",
-            "confidence": "89%"
-        }
-        fut_b = {
-            "focus": f"Pre-Trip Study Sprint + Guilt-Free {days_count}-Day Travel",
-            "exam_score_projected": "86% (Review slides & practice sets locked beforehand)",
-            "assignment_completion": "100% Locked & Submitted before trip",
-            "deadline_risk": "Zero (All pending coursework submitted ahead of time)",
-            "fatigue": "Low & Rested (34% fatigue, genuine mental rejuvenation)",
-            "confidence": "95%"
-        }
-        why_this_panel = {
-            "recommendation": f"Execute a concentrated {min(6, 2 + days_count)}-hour study sprint today to submit pending assignments before leaving. You can enjoy your {days_count}-day trip completely guilt-free with zero academic backlog upon return.",
-            "consequences": {
-                "short_term": f"Slightly heavier evening study sprint today (+{min(3, days_count)}h focus block).",
-                "long_term": f"Prevents a {days_count * 7}% mid-term grade drop and keeps your study streak intact."
-            },
-            "confidence_level": {"score": "95%", "reason_for_lower_confidence": "Historical high completion rate in evening sprint blocks."},
-            "what_if_ignored": f"Leaving without pre-study creates a {days_count * 6}-hour backlog that collides with immediate class deadlines upon return.",
-            "difference_from_student_idea": f"Instead of postponing all coursework until after the trip, front-load 70% of the effort so you travel with complete peace of mind.",
-            "top_factors_plain_language": [
-                f"Absence duration: {days_count * 24} hours without coursework access",
-                f"Coursework collision: {min(4, days_count + 1)} submission deadlines during travel period",
-                "Cognitive stamina recovery: travel provides authentic rest only when backlog is pre-cleared"
-            ],
-            "data_receipt": {
-                "sources_used": [
-                    "Student Weekly Timetable & Class Schedule",
-                    "Enrolled Course Deadlines (twin_database.json)",
-                    "Cognitive Stamina & Focus Telemetry Logs"
-                ],
-                "sources_not_used": [
-                    "Personal Chat & Messaging Data (Permanently Muted)",
-                    "Device GPS & Location Tracking (Permanently Muted)",
-                    "Camera & Audio Streams (Permanently Muted)"
-                ]
-            }
-        }
-    # 2. SCENARIO: ALL-NIGHTER / SLEEP SACRIFICE
-    elif any(k in q_lower for k in ["all-nighter", "all nighter", "no sleep", "stay up all night", "night out", "cram all night"]):
-        fut_a = {
-            "focus": "All-Nighter Cramming (0-2h Sleep)",
-            "exam_score_projected": "69% (Cognitive fog causes recall failures)",
-            "assignment_completion": "Submitted with syntax & reasoning errors",
-            "deadline_risk": "Moderate (Submitted on time but flawed execution)",
-            "fatigue": "Severe Crash (94% stamina depletion next day)",
-            "confidence": "92%"
-        }
-        fut_b = {
-            "focus": "Targeted 3h Evening Revision + 7.5h Full Sleep",
-            "exam_score_projected": "88% (Sharp recall and high working memory)",
-            "assignment_completion": "High Quality (95% accuracy score)",
-            "deadline_risk": "Low (Finished by 11:30 PM with zero late penalty)",
-            "fatigue": "Optimal (28% fatigue, fresh for morning lecture)",
-            "confidence": "96%"
-        }
-        why_this_panel = {
-            "recommendation": "Stop studying at 11:30 PM and sleep at least 7.5 hours. Cognitive science models show memory consolidation occurs during sleep; all-nighters reduce exam retention by 21%.",
-            "consequences": {
-                "short_term": "Requires prioritizing high-yield topics instead of reading everything.",
-                "long_term": "Prevents stamina burnout and avoids day-long drowsiness during subsequent lectures."
-            },
-            "confidence_level": {"score": "96%", "reason_for_lower_confidence": "Proven cognitive stamina decay pattern in student profile."},
-            "what_if_ignored": "High risk of blanking out on analytical exam questions and falling asleep in afternoon labs.",
-            "difference_from_student_idea": "The twin prioritizes sleep-backed retention over brute-force exhaustive sleepless reading.",
-            "top_factors_plain_language": [
-                "Circadian rhythm crash: 94% stamina degradation logged after 2:00 AM study",
-                "Analytical recall drop: sleep deprivation reduces exam problem solving speed by 35%",
-                "Day-after cascade: next-day lecture comprehension collapses without restorative REM sleep"
-            ],
-            "data_receipt": {
-                "sources_used": [
-                    "Circadian Stamina Telemetry Model",
-                    "Course Syllabus & Exam Weightings",
-                    "Historical Study Block Durations"
-                ],
-                "sources_not_used": [
-                    "Personal Chat & Messaging Data (Permanently Muted)",
-                    "Device GPS & Location Tracking (Permanently Muted)",
-                    "Camera & Audio Streams (Permanently Muted)"
-                ]
-            }
-        }
-    # 3. SCENARIO: SKIPPING CLASS / LECTURE
-    elif any(k in q_lower for k in ["skip", "bunk", "miss class", "miss lecture", "dont attend", "don't attend"]):
-        target_sub = subjects[0]["name"] if subjects else "Scheduled Lecture"
-        for s in subjects:
-            if s.get("name", "").lower() in q_lower:
-                target_sub = s["name"]
-                break
-        fut_a = {
-            "focus": f"Skip {target_sub} to Self-Study",
-            "exam_score_projected": "71% (Misses professor's exam tips & attendance mark)",
-            "assignment_completion": "Self-study pace 40% slower than guided lab",
-            "deadline_risk": "Elevated (No direct answers to doubt queries)",
-            "fatigue": "Moderate (60% guilt and lingering confusion)",
-            "confidence": "87%"
-        }
-        fut_b = {
-            "focus": f"Attend {target_sub} + 1h Evening Recap",
-            "exam_score_projected": "89% (Maintains 100% attendance & exam hints)",
-            "assignment_completion": "Clarified nuances directly with faculty",
-            "deadline_risk": "Zero (Immediate lab validation)",
-            "fatigue": "Balanced (35% cognitive load)",
-            "confidence": "93%"
-        }
-        why_this_panel = {
-            "recommendation": f"Attend the {target_sub} session in person. Catching up later takes 2.3x longer than attending live.",
-            "consequences": {
-                "short_term": "Must adhere to current morning timetable.",
-                "long_term": "Protects minimum attendance threshold and keeps peer collaboration alive."
-            },
-            "confidence_level": {"score": "93%", "reason_for_lower_confidence": "Attendance logs confirm strong grade correlation."},
-            "what_if_ignored": "Self-studying without lecture notes risks misinterpreting syllabus-specific criteria.",
-            "difference_from_student_idea": "Balances classroom attendance with micro-focus blocks instead of skipping altogether.",
-            "top_factors_plain_language": [
-                f"Course grade weight: attendance and live labs count for 20% of {target_sub}",
-                "Catch-up penalty: reviewing peer recordings takes 2.3x longer than live lecture",
-                "Faculty hints: in-class revision highlights exact questions appearing on midterms"
-            ],
-            "data_receipt": {
-                "sources_used": [
-                    f"{target_sub} Syllabus & Lab Rubric",
-                    "Weekly Timetable Schedule",
-                    "Historical Attendance Records"
-                ],
-                "sources_not_used": [
-                    "Personal Chat & Messaging Data (Permanently Muted)",
-                    "Device GPS & Location Tracking (Permanently Muted)",
-                    "Camera & Audio Streams (Permanently Muted)"
-                ]
-            }
-        }
-    # 4. DEFAULT DYNAMIC SCENARIO
-    else:
-        words = [w.capitalize() for w in q_lower.split() if len(w) > 3 and w not in ["what", "this", "that", "with", "from", "should", "could"]]
-        focus_topic = " ".join(words[:3]) if words else "Flexible Study Plan"
-        fut_a = {
-            "focus": f"Proceed with Unbuffered Plan: {focus_topic}",
-            "exam_score_projected": "70% (Unmitigated schedule conflicts)",
-            "assignment_completion": "Moderate (55% on-time completion)",
-            "deadline_risk": "High (Zero time buffer for unexpected delays)",
-            "fatigue": "Elevated (72% stress under deadline pressure)",
-            "confidence": "84%"
-        }
-        fut_b = {
-            "focus": f"Digital Twin Buffered Schedule: {focus_topic}",
-            "exam_score_projected": "88% (Structured pacing with verified milestones)",
-            "assignment_completion": "100% Verified Proof & Submissions",
-            "deadline_risk": "Low (35% time buffer built in)",
-            "fatigue": "Optimal (30% balanced load with scheduled breaks)",
-            "confidence": "93%"
-        }
-        why_this_panel = {
-            "recommendation": f"Adopt the Twin's buffered plan for {focus_topic}. Segment your tasks into 45-minute blocks with 10-minute pauses to preserve analytical endurance.",
-            "consequences": {
-                "short_term": "Requires following a structured focus timer routine.",
-                "long_term": "Guarantees sustained progress toward your target CGPA."
-            },
-            "confidence_level": {"score": "93%", "reason_for_lower_confidence": "Dynamic scenario modeling based on historical telemetry."},
-            "what_if_ignored": "Unbuffered cramming risks missed deadlines and cognitive fatigue.",
-            "difference_from_student_idea": "The twin accommodates your choice while safeguarding exam readiness and verified coursework points.",
-            "top_factors_plain_language": [
-                f"Workload density: {focus_topic} requires balanced micro-sprints to avoid burnout",
-                "Cognitive buffer: 35% time buffer built in for unexpected concept friction",
-                "Streak protection: steady daily study preserves your active streak points"
-            ],
-            "data_receipt": {
-                "sources_used": [
-                    "Current Semester Coursework List",
-                    "Daily Study Hour Target (4.5h)",
-                    "Focus Telemetry Metrics"
-                ],
-                "sources_not_used": [
-                    "Personal Chat & Messaging Data (Permanently Muted)",
-                    "Device GPS & Location Tracking (Permanently Muted)",
-                    "Camera & Audio Streams (Permanently Muted)"
-                ]
-            }
-        }
-
-    return {
-        "query": query,
-        "futureA": fut_a,
-        "futureB": fut_b,
-        "why_this": why_this_panel
-    }
+def simulate_decision(query: str, db: dict, user_id: str = None) -> dict:
+    if not user_id:
+        user_id = db.get("user", {}).get("id") or "usr_navin_demo"
+    return ai_service.run_what_if_simulation(user_id, query)
 
 # --- ROUTES ---
 
 @app.route("/api/state", methods=["GET"])
 def get_state():
     data = load_db()
+    user = get_auth_user(request)
+    if user:
+        academic_state = db_mgr.get_user_academic_state(user["id"])
+        if academic_state and academic_state.get("user"):
+            academic_state["twin_status"] = data.get("twin_status", {})
+            academic_state["cognitive_weights"] = data.get("cognitive_weights", {})
+            academic_state["study_telemetry"] = data.get("study_telemetry", {})
+            academic_state["scoreboard"] = data.get("scoreboard", {})
+            academic_state["privacy_controls"] = data.get("privacy_controls", {})
+            academic_state["activity_logs"] = data.get("activity_logs", [])
+            academic_state["subject_targets"] = data.get("subject_targets", {})
+            return jsonify(academic_state)
+
     email = request.args.get("email", "").strip().lower()
     if not email:
         email = request.headers.get("x-user-email", "").strip().lower()
@@ -2067,41 +1907,48 @@ def auth_login():
     registered = db.get("registered_users", {})
     matched_user = None
 
-    for email_key, udata in registered.items():
-        if email_key.lower() == identifier.lower() or udata.get("phone") == identifier:
-            matched_user = udata
-            break
+    # First verify with relational database
+    rel_user, rel_err = db_mgr.verify_user_login(identifier, password)
+    if rel_user:
+        matched_user = rel_user
+    else:
+        # Fallback check in registered_users dictionary
+        for email_key, udata in registered.items():
+            if email_key.lower() == identifier.lower() or udata.get("phone") == identifier:
+                if udata.get("password") == password:
+                    matched_user = udata
+                    break
 
-    # Fallback check for demo student
+        # Fallback check for demo student
+        if not matched_user:
+            if identifier.lower() == "navinnavi8431@gmail.com" and password == "password123":
+                matched_user = {
+                    "id": "usr_navin_demo",
+                    "name": "Adarsh Sharma",
+                    "email": "navinnavi8431@gmail.com",
+                    "dob": "2002-05-15",
+                    "age": 24,
+                    "role": "student",
+                    "is_minor": False,
+                    "password": "password123"
+                }
+            elif identifier.lower() == "parent.suresh@gmail.com" and password == "password123":
+                matched_user = {
+                    "id": "usr_parent_suresh",
+                    "name": "Mr. Suresh Sharma",
+                    "email": "parent.suresh@gmail.com",
+                    "role": "parent",
+                    "password": "password123"
+                }
+
     if not matched_user:
-        if identifier.lower() == "navinnavi8431@gmail.com" and password == "password123":
-            matched_user = {
-                "name": "Adarsh Sharma",
-                "email": "navinnavi8431@gmail.com",
-                "dob": "2002-05-15",
-                "age": 24,
-                "role": "student",
-                "is_minor": False,
-                "password": "password123"
-            }
-        elif identifier.lower() == "parent.suresh@gmail.com" and password == "password123":
-            matched_user = {
-                "name": "Mr. Suresh Sharma",
-                "email": "parent.suresh@gmail.com",
-                "role": "parent",
-                "password": "password123"
-            }
+        return jsonify({"status": "error", "message": rel_err or "Invalid credentials. Please register first."}), 401
 
-    if not matched_user:
-        return jsonify({"status": "error", "message": "No account found with this email. Please register first."}), 401
-
-    if matched_user.get("password") != password:
-        return jsonify({"status": "error", "message": "Incorrect password. Please try again or use Forgot Password."}), 401
-
+    user_id = matched_user.get("id") or f"usr_{identifier.replace('@', '_').replace('.', '_')}"
+    token = db_mgr.create_session(user_id)
     user_role = matched_user.get("role", "student")
 
     if user_role == "parent":
-        # Log parent login
         p_email = matched_user.get("email", identifier).strip().lower()
         linked_stu = matched_user.get("linked_student_email")
         if not linked_stu:
@@ -2116,7 +1963,9 @@ def auth_login():
             "status": "success",
             "message": f"Welcome to Parent / Guardian Dashboard, {matched_user.get('name', 'Parent')}!",
             "role": "parent",
+            "token": token,
             "user": {
+                "id": user_id,
                 "name": matched_user.get("name", "Parent / Guardian"),
                 "email": p_email,
                 "role": "parent",
@@ -2124,7 +1973,7 @@ def auth_login():
             }
         })
     else:
-        # Student login - track login timestamp in activity_logs
+        # Student login
         now = datetime.datetime.now()
         act_entry = {
             "id": f"act_{int(now.timestamp()*1000)}",
@@ -2141,6 +1990,7 @@ def auth_login():
         is_minor = bool(matched_user.get("is_minor"))
         stu_email = matched_user.get("email", identifier)
         db["user"] = {
+            "id": user_id,
             "name": matched_user.get("name", "Student"),
             "email": stu_email,
             "dob": matched_user.get("dob", ""),
@@ -2187,9 +2037,51 @@ def auth_login():
             "status": "success",
             "message": f"Welcome back, {db['user']['name']}!",
             "role": "student",
+            "token": token,
             "user": db["user"],
             "is_minor": is_minor
         })
+
+@app.route("/api/auth/me", methods=["GET"])
+def auth_me():
+    user = get_auth_user(request)
+    if not user:
+        return jsonify({"status": "error", "message": "Not authenticated."}), 401
+    role = user.get("role", "student")
+    return jsonify({
+        "status": "success",
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "email": user["email"],
+            "dob": user.get("dob", ""),
+            "age": user.get("age", 20),
+            "is_minor": bool(user.get("is_minor")),
+            "role": role,
+            "points": user.get("points", 100),
+            "streak_days": user.get("streak_days", 1),
+            "daily_study_hours": user.get("daily_study_hours", 3.0),
+            "focus_duration_minutes": user.get("focus_duration_minutes", 45),
+            "college": user.get("college", ""),
+            "grade_level": user.get("grade_level", ""),
+            "guardian_email": user.get("guardian_email", ""),
+            "linking_code": user.get("linking_code", "TS-LINK-8921")
+        },
+        "role": role
+    })
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    auth_header = request.headers.get("Authorization", "")
+    token = None
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    if not token:
+        data = request.get_json(silent=True) or {}
+        token = data.get("token")
+    if token:
+        db_mgr.delete_session(token)
+    return jsonify({"status": "success", "message": "Logged out successfully."})
 
 @app.route("/api/auth/forgot-send-otp", methods=["POST"])
 def forgot_send_otp():
@@ -2285,6 +2177,41 @@ def forgot_verify_otp():
 
     return jsonify({"status": "success", "message": "Password updated successfully! Please sign in with your new password."})
 
+@app.route("/api/chat/message", methods=["POST"])
+def chat_message_route():
+    user = get_auth_user(request)
+    data = request.get_json() or {}
+    message = (data.get("message") or data.get("query") or "").strip()
+    conversation_id = data.get("conversation_id")
+    if not message:
+        return jsonify({"status": "error", "message": "Message cannot be empty."}), 400
+
+    user_id = user["id"] if user else "usr_navin_demo"
+    res = ai_service.generate_chat_response(user_id, message, conversation_id)
+    return jsonify({
+        "status": "success",
+        "response": res["response"],
+        "conversation_id": res["conversation_id"]
+    })
+
+@app.route("/api/decisions/feedback", methods=["POST"])
+def decision_feedback_route():
+    user = get_auth_user(request)
+    data = request.get_json() or {}
+    decision_id = data.get("decision_id")
+    agreement = (data.get("agreement") or data.get("choice") or "agree").strip().lower()
+    chosen_option = data.get("chosen_option") or data.get("chosen_path") or ("Option B" if agreement == "agree" else "Option A")
+    user_reason = (data.get("user_reason") or data.get("reason") or "").strip()
+
+    user_id = user["id"] if user else "usr_navin_demo"
+    if decision_id:
+        db_mgr.update_decision_feedback(decision_id, user_id, agreement, chosen_option, user_reason)
+
+    return jsonify({
+        "status": "success",
+        "message": "Feedback recorded! Digital Twin behavioral patterns recalibrated."
+    })
+
 @app.route("/api/simulate", methods=["POST"])
 def run_simulation_route():
     data = request.get_json() or {}
@@ -2292,8 +2219,9 @@ def run_simulation_route():
     if not query:
         return jsonify({"status": "error", "message": "Query cannot be empty"}), 400
 
-    db = load_db()
-    result = simulate_decision(query, db)
+    user = get_auth_user(request)
+    user_id = user["id"] if user else "usr_navin_demo"
+    result = ai_service.run_what_if_simulation(user_id, query)
     return jsonify(result)
 
 @app.route("/api/tasks/submit-proof", methods=["POST"])
@@ -2319,8 +2247,14 @@ def submit_task_proof():
             if t.get("id") == task_id:
                 matched_task = t
                 break
-        if matched_task:
-            break
+    if not matched_task:
+        rel_task = db_mgr.fetchone("SELECT * FROM tasks WHERE id = %s", (task_id,))
+        if rel_task:
+            matched_task = dict(rel_task)
+        else:
+            rel_all = db_mgr.fetchall("SELECT * FROM tasks")
+            if rel_all:
+                matched_task = dict(rel_all[0])
 
     if not matched_task:
         return jsonify({"status": "error", "message": "Task not found."}), 404
@@ -2334,6 +2268,32 @@ def submit_task_proof():
     matched_task["verified_file"] = filename
     matched_task["quiz_score"] = quiz_score
     matched_task["verified_at"] = datetime.datetime.now().isoformat()
+
+    # Relational Database Sync
+    try:
+        db_mgr.execute("""
+            UPDATE tasks
+            SET status = 'Verified & Done', verified = 1, verified_file = %s, quiz_score = %s, verified_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """, (filename, quiz_score, task_id))
+        rel_u = db_mgr.get_user_by_email(email)
+        if rel_u:
+            db_mgr.execute("""
+                UPDATE users
+                SET points = points + %s, streak_days = streak_days + 1
+                WHERE id = %s
+            """, (earned, rel_u["id"]))
+            db_mgr.execute("""
+                INSERT INTO notifications (id, user_id, title, description, type)
+                VALUES (%s, %s, %s, %s, 'reward')
+            """, (
+                f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+                rel_u["id"],
+                f"Proof Verified: {matched_task['title']} (+{earned} pts)",
+                f"Verified with uploaded artifact '{filename}' and teach-back quiz score {quiz_score}."
+            ))
+    except Exception as dbe:
+        print(f"[PROOF SYNC WARNING]: {dbe}")
 
     # Also sync task across both lists if present
     for t_list in all_task_lists:

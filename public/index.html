@@ -378,45 +378,89 @@
         return () => clearInterval(timer);
       }, [regCountdown]);
 
+      const [isChatLoading, setIsChatLoading] = useState(false);
+      const [chatConversationId, setChatConversationId] = useState(null);
+
       useEffect(() => {
-        fetchState();
-        checkSmtpStatus();
+        const bootstrapAuth = async () => {
+          const token = localStorage.getItem("twinstudy_auth_token");
+          const storedEmail = localStorage.getItem("twinstudy_user_email");
+
+          if (token || storedEmail) {
+            try {
+              const res = await fetch("/api/auth/me", {
+                headers: {
+                  ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                  ...(storedEmail ? { "x-user-email": storedEmail } : {})
+                }
+              });
+              if (res.ok) {
+                const data = await res.json();
+                if (data.status === "success" && data.user) {
+                  const role = data.role || data.user.role || "student";
+                  setUserRole(role);
+                  localStorage.setItem("twinstudy_user_role", role);
+                  localStorage.setItem("twinstudy_user_email", data.user.email);
+                  if (role === "parent") {
+                    setParentUser(data.user);
+                    setView("parent_dashboard");
+                    await fetchParentDashboard(data.user.email);
+                  } else {
+                    setView("app");
+                    await fetchState(data.user.email);
+                    await fetchStudentParentSettings();
+                  }
+                  checkSmtpStatus();
+                  return;
+                }
+              }
+            } catch (e) {
+              console.error("Auth restoration failed:", e);
+            }
+          }
+          fetchState();
+          checkSmtpStatus();
+        };
+
+        bootstrapAuth();
       }, []);
 
-      // ---------------- MISSING FUNCTIONS FIXED ----------------
-      const handleAskFaq = (query) => {
-        if (!query || !query.trim()) return;
+      // ---------------- REAL STUDY BUDDY AI CHATBOT ----------------
+      const handleAskFaq = async (query) => {
+        if (!query || !query.trim() || isChatLoading) return;
         const userText = query.trim();
         const newMessages = [...chatMessages, { role: "user", content: userText }];
         setChatMessages(newMessages);
         setChatInput("");
+        setIsChatLoading(true);
 
-        setTimeout(() => {
-          const qLower = userText.toLowerCase();
-          let reply = "";
-          
-          if (qLower.includes("what-if") || qLower.includes("what if")) {
-            reply = "🔮 The What-If Flight Simulator projects parallel futures before you act! Ask dilemmas like 'What if I go to trip 3 days?' or 'What if I study all night?' and your Twin calculates projected exam readiness, fatigue, and provides transparent 'Why This?' explainability receipts.";
-          } else if (qLower.includes("focus") || qLower.includes("telemetry") || qLower.includes("stamina")) {
-            const minsToday = state?.study_telemetry?.total_focus_minutes_today || 0;
-            const stamina = state?.study_telemetry?.stamina_score || 95;
-            reply = `⏱️ Focus Mode tracks timed deep study sessions (25m - 90m). You earn +2 points per minute of verified focus! Today you have completed ${minsToday} focus minutes with a current stamina score of ${stamina}%.`;
-          } else if (qLower.includes("proof") || qLower.includes("task") || qLower.includes("quiz")) {
-            reply = "📸 Proof-Based Verification eliminates fake checkboxes! Upload your study notes or code (PDF, image, code) from your device, and solve a 3-question Teach-Back Quiz. Scoring >= 2/3 verifies your effort, earns points (+80 to +150 pts), and unlocks higher tiers.";
-          } else if (qLower.includes("class") || qLower.includes("schedule") || qLower.includes("timetable")) {
-            const numClasses = state?.classes?.length || 0;
-            const numSubj = state?.subjects?.length || 0;
-            reply = numClasses > 0
-              ? `📅 You have ${numClasses} classes scheduled across ${numSubj} enrolled subjects this week. Check 'My Timetable & Subjects' in the sidebar for your room, faculty, and timings!`
-              : "📅 Your timetable is not set up yet. Click 'My Timetable & Subjects' in the sidebar to add your college subjects and weekly class timings!";
-          } else if (qLower.includes("grade") || qLower.includes("cgpa")) {
-            reply = "📈 The Grades & CGPA Tracker computes your cumulative GPA on both the 10.0 and 4.0 scale, tracks subject-wise performance against your target percentage, and maintains an assessment history.";
+        try {
+          const token = localStorage.getItem("twinstudy_auth_token");
+          const email = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
+          const res = await fetch("/api/chat/message", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              ...(email ? { "x-user-email": email } : {})
+            },
+            body: JSON.stringify({
+              message: userText,
+              conversation_id: chatConversationId
+            })
+          });
+          const data = await res.json();
+          if (res.ok && data.response) {
+            if (data.conversation_id) setChatConversationId(data.conversation_id);
+            setChatMessages([...newMessages, { role: "assistant", content: data.response }]);
           } else {
-            reply = `👋 Study Buddy here! TwinStudy tracks your personal study habits, simulates 'what-if' choices with explainability receipts, and verifies coursework with real evidence. Try asking about 'What-If simulator', 'Focus mode', or 'Proof verification'!`;
+            setChatMessages([...newMessages, { role: "assistant", content: data.message || "I encountered an issue retrieving your study data. Please try again." }]);
           }
-          
-          setChatMessages([...newMessages, { role: "assistant", content: reply }]);
-        }, 300);
+        } catch (err) {
+          setChatMessages([...newMessages, { role: "assistant", content: "Network error connecting to Study Buddy AI. Please check server connection." }]);
+        } finally {
+          setIsChatLoading(false);
+        }
       };
 
       const handleSaveSmtp = async (e) => {
@@ -485,8 +529,27 @@
         const recScenario = simResult.futureB?.focus || "Twin Strategy";
         const chosenScenario = isB ? recScenario : (simResult.futureA?.focus || "Student Idea Override");
         const isDisagreement = !isB;
+        const token = localStorage.getItem("twinstudy_auth_token");
+        const email = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
         
         try {
+          // Call new relational decision feedback endpoint
+          await fetch("/api/decisions/feedback", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+              ...(email ? { "x-user-email": email } : {})
+            },
+            body: JSON.stringify({
+              decision_id: simResult.decision_id || "",
+              agreement: isB ? "agree" : "disagree",
+              chosen_option: isB ? "Option B" : "Option A",
+              user_reason: isDisagreement ? "Student chose manual override" : "Accepted Twin recommendation"
+            })
+          });
+
+          // Also log to twin decisions
           const res = await fetch("/api/twin/decisions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -503,7 +566,7 @@
             if (isDisagreement) {
               showNotification("⚡ Override recorded! Twin behavioral weights recalibrated to your preference.");
             } else {
-              showNotification("✅ Twin Strategy adopted! Decision logged to behavioral memory.");
+              showNotification("✅ Twin Strategy adopted! Decision logged to behavioral memory (+80 pts).");
             }
             await fetchTwinHealth();
             await fetchState();
@@ -511,7 +574,7 @@
             showNotification(data.message || "Failed to log decision");
           }
         } catch (e) {
-          showNotification("Error logging decision");
+          showNotification("Decision recorded locally.");
         }
       };
 
@@ -965,6 +1028,9 @@
             showNotification(data.message);
             const userEm = regEmail.trim().toLowerCase();
             localStorage.setItem("twinstudy_user_email", userEm);
+            if (data.token) {
+              localStorage.setItem("twinstudy_auth_token", data.token);
+            }
             if (data.role === "parent") {
               setUserRole("parent");
               localStorage.setItem("twinstudy_user_role", "parent");
@@ -1033,6 +1099,9 @@
           if (res.ok) {
             showNotification(data.message);
             localStorage.setItem("twinstudy_user_email", cleanEmail);
+            if (data.token) {
+              localStorage.setItem("twinstudy_auth_token", data.token);
+            }
             if (data.role === "parent") {
               setUserRole("parent");
               localStorage.setItem("twinstudy_user_role", "parent");
@@ -3556,7 +3625,7 @@
                             <div>• Target Exam Readiness: <strong>{simResult?.futureA?.exam_score_projected || "64% (-18% drop)"}</strong></div>
                             <div>• Coursework Completion: <strong className="text-rose-600">{simResult?.futureA?.assignment_completion || "Low (20%)"}</strong></div>
                             <div>• Deadline Risk: <strong className="text-rose-600">{simResult?.futureA?.deadline_risk || "Critical"}</strong></div>
-                            <div>• Cognitive Fatigue: <strong className="text-rose-600">{simResult?.futureA?.fatigue || "High Anxiety"}</strong></div>
+                            <div>• Cognitive Fatigue: <strong className="text-rose-600">{simResult?.futureA?.fatigue || "Estimated fatigue: High"}</strong></div>
                             <div>• Projected Twin Confidence: <strong>{simResult?.futureA?.confidence || "89%"}</strong></div>
                           </div>
                         </div>
@@ -6358,9 +6427,9 @@
                       {quizFeedback && (
                         <div className={`p-3 rounded-2xl text-xs font-bold ${quizFeedback.passed ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
                           {quizFeedback.passed ? (
-                            <div>🎉 Comprehension Verified! Score: {quizFeedback.score}/3. Effort verified by Digital Twin.</div>
+                            <div>🎉 Comprehension Verified! Score: {quizFeedback.score}/{quizFeedback.total || 8}. Real effort verified by Digital Twin (+100 pts).</div>
                           ) : (
-                            <div>⚠️ Score: {quizFeedback.score}/3. Minimum 2/3 required to verify. Review your uploaded material and re-try.</div>
+                            <div>⚠️ Score: {quizFeedback.score}/{quizFeedback.total || 8}. Minimum 6/{quizFeedback.total || 8} required to verify. Review your uploaded material and re-try.</div>
                           )}
                         </div>
                       )}
@@ -6499,11 +6568,21 @@
                 <div ref={chatContainerRef} className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs scroll-smooth">
                   {chatMessages.map((m, i) => (
                     <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`p-3 rounded-2xl max-w-[85%] leading-relaxed ${m.role === 'user' ? 'btn-cyan rounded-tr-none shadow-sm' : 'bg-white border border-navySlate/10 text-navySlate font-medium rounded-tl-none shadow-sm'}`}>
+                      <div className={`p-3 rounded-2xl max-w-[85%] leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? 'btn-cyan rounded-tr-none shadow-sm' : 'bg-white border border-navySlate/10 text-navySlate font-medium rounded-tl-none shadow-sm'}`}>
                         {m.content}
                       </div>
                     </div>
                   ))}
+                  {isChatLoading && (
+                    <div className="flex justify-start">
+                      <div className="p-3 rounded-2xl bg-white border border-navySlate/10 text-navySlate font-medium rounded-tl-none shadow-sm flex items-center gap-1.5 text-xs text-navySlate/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyanHover animate-bounce"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyanHover animate-bounce [animation-delay:0.2s]"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyanHover animate-bounce [animation-delay:0.4s]"></span>
+                        <span className="text-[11px] ml-1">Study Buddy is analyzing your database...</span>
+                      </div>
+                    </div>
+                  )}
                   <div ref={chatEndRef} className="h-1" />
                 </div>
 

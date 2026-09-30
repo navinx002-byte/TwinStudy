@@ -1,7 +1,8 @@
 {
   "user": {
+    "id": "usr_41f5ff4e6d03",
     "name": "Navin",
-    "email": "navin.x002@gmail.com",
+    "email": "navinnavi8431@gmail.com",
     "dob": "2022-11-25",
     "age": 3,
     "is_minor": true,
@@ -17,8 +18,8 @@
       "Build strong study discipline",
       "Complete coursework on time"
     ],
-    "college": "VTU College",
-    "grade_level": "Computer Science Engineering (Semester 4)",
+    "college": "",
+    "grade_level": "Enrolled Student",
     "guardian_email": "",
     "linking_code": "TS-LINK-8921"
   },
@@ -116,7 +117,19 @@
           "week_type": "All"
         }
       ],
-      "role": "student"
+      "role": "student",
+      "points": 200,
+      "streak_days": 2,
+      "notifications": [
+        {
+          "id": "notif_1790798499176",
+          "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
+          "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+          "time": "Just now",
+          "type": "reward",
+          "read": false
+        }
+      ]
     },
     "8660635584": {
       "name": "Adarsh",
@@ -429,177 +442,16 @@
     }
   },
   "academic_profile": {
-    "academic_year": "2026-2028",
-    "college": "VTU College",
-    "course": "Computer Science Engineering",
-    "semester": "Semester 4",
+    "student_name": "Navin",
+    "college": "",
+    "course": "",
+    "semester": "",
     "specialization": "cs",
-    "student_name": "Navin"
+    "academic_year": "2026-2027"
   },
-  "subjects": [
-    {
-      "code": "DV4523",
-      "color": "#00C4CC",
-      "credits": "",
-      "id": "s_1790768668419",
-      "name": "DCN",
-      "room": "hg",
-      "teacher": "hggsda",
-      "type": "Lecture"
-    },
-    {
-      "code": "wr",
-      "color": "#8B5CF6",
-      "credits": "",
-      "id": "s_1790768678946",
-      "name": "ge",
-      "room": "rw",
-      "teacher": "w",
-      "type": "Lecture"
-    },
-    {
-      "code": "erh",
-      "color": "#14B8A6",
-      "credits": "",
-      "id": "s_1790768703026",
-      "name": "erj",
-      "room": "ty",
-      "teacher": "234",
-      "type": "Lecture"
-    },
-    {
-      "name": "python",
-      "code": "py005",
-      "teacher": "sowmya",
-      "room": "67",
-      "credits": "",
-      "color": "#3B82F6",
-      "type": "Lecture",
-      "id": "s_1790774845361"
-    }
-  ],
-  "classes": [
-    {
-      "color": "#00C4CC",
-      "day": "Monday",
-      "end_time": "11:30",
-      "id": "c_1790768728250",
-      "room": "hg",
-      "start_time": "10:00",
-      "subject": "DCN",
-      "subject_id": "s_1790768668419",
-      "teacher": "hggsda",
-      "time": "10:00 AM - 11:30 AM",
-      "type": "Lecture",
-      "week_type": "All"
-    },
-    {
-      "color": "#14B8A6",
-      "day": "Thursday",
-      "end_time": "11:30",
-      "id": "c_1790768744250",
-      "room": "ty",
-      "start_time": "10:00",
-      "subject": "erj",
-      "subject_id": "s_1790768703026",
-      "teacher": "234",
-      "time": "10:00 AM - 11:30 AM",
-      "type": "Lecture",
-      "week_type": "All"
-    },
-    {
-      "color": "#8B5CF6",
-      "day": "Friday",
-      "end_time": "11:30",
-      "id": "c_1790768753960",
-      "room": "rw",
-      "start_time": "10:00",
-      "subject": "ge",
-      "subject_id": "s_1790768678946",
-      "teacher": "w",
-      "time": "10:00 AM - 11:30 AM",
-      "type": "Lecture",
-      "week_type": "All"
-    }
-  ],
-  "tasks": [
-    {
-      "id": "t_1790795833651_1",
-      "subject": "DCN",
-      "subject_color": "#00C4CC",
-      "title": "Complete DCN Problem Set & Module Review",
-      "type": "Assignment",
-      "due": "In 2 days",
-      "due_date": "2026-10-03",
-      "days_remaining": 2,
-      "points": 100,
-      "points_reward": 100,
-      "status": "Pending",
-      "verified": false,
-      "proof_status": "pending",
-      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
-      "priority": "Critical",
-      "estimated_effort_hours": 2.5,
-      "weight_percent": 15
-    },
-    {
-      "id": "t_1790795833651_2",
-      "subject": "ge",
-      "subject_color": "#8B5CF6",
-      "title": "Complete ge Problem Set & Module Review",
-      "type": "Lab Practical",
-      "due": "In 3 days",
-      "due_date": "2026-10-04",
-      "days_remaining": 3,
-      "points": 125,
-      "points_reward": 125,
-      "status": "Pending",
-      "verified": false,
-      "proof_status": "pending",
-      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
-      "priority": "High",
-      "estimated_effort_hours": 3.0,
-      "weight_percent": 20
-    },
-    {
-      "id": "t_1790795833651_3",
-      "subject": "erj",
-      "subject_color": "#14B8A6",
-      "title": "Complete erj Problem Set & Module Review",
-      "type": "Assignment",
-      "due": "In 4 days",
-      "due_date": "2026-10-05",
-      "days_remaining": 4,
-      "points": 150,
-      "points_reward": 150,
-      "status": "Pending",
-      "verified": false,
-      "proof_status": "pending",
-      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
-      "priority": "High",
-      "estimated_effort_hours": 3.5,
-      "weight_percent": 25
-    },
-    {
-      "id": "t_1790795833651_4",
-      "subject": "python",
-      "subject_color": "#3B82F6",
-      "title": "Complete python Problem Set & Module Review",
-      "type": "Lab Practical",
-      "due": "In 5 days",
-      "due_date": "2026-10-06",
-      "days_remaining": 5,
-      "points": 175,
-      "points_reward": 175,
-      "status": "Pending",
-      "verified": false,
-      "proof_status": "pending",
-      "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
-      "priority": "High",
-      "estimated_effort_hours": 4.0,
-      "weight_percent": 30
-    }
-  ],
+  "subjects": [],
+  "classes": [],
+  "tasks": [],
   "twin_status": {
     "status": "Learning & Verifying",
     "personalization_level": 82,
@@ -701,6 +553,14 @@
     "allow_nudges": true
   },
   "notifications": [
+    {
+      "id": "notif_1790798499176",
+      "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
+      "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
     {
       "id": "notif_1790795782837",
       "title": "Proof Verified: Complete DCN Problem Set & Module Review (+100 pts)",
@@ -1064,6 +924,30 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act_1790798484859",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "01:31 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790798429805",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "01:30 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
+    {
+      "id": "act_1790798406833",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "01:30 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
     {
       "id": "act_1790793916165",
       "user_email": "navin.x002@gmail.com",
