@@ -688,6 +688,78 @@ def get_state():
             ],
             "registered_users": data.get("registered_users", {})
         }
+
+        # Auto-generate dynamic proof-based tasks if empty so Proof section works immediately
+        if not user_state["tasks"]:
+            stu_subjects = user_state["subjects"]
+            dynamic_tasks = []
+            if stu_subjects:
+                for i, s in enumerate(stu_subjects[:5]):
+                    s_name = s.get("name", "Coursework")
+                    dynamic_tasks.append({
+                        "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}_{i+1}",
+                        "subject": s_name,
+                        "subject_color": s.get("color", "#00C4CC"),
+                        "title": f"Complete {s_name} Problem Set & Module Review",
+                        "type": "Assignment" if i % 2 == 0 else "Lab Practical",
+                        "due": f"In {i+2} days",
+                        "due_date": (datetime.date.today() + datetime.timedelta(days=i+2)).isoformat(),
+                        "days_remaining": i + 2,
+                        "points": 100 + i * 25,
+                        "points_reward": 100 + i * 25,
+                        "status": "Pending",
+                        "verified": False,
+                        "proof_status": "pending",
+                        "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+                        "priority": "Critical" if i == 0 else "High",
+                        "estimated_effort_hours": 2.5 + i * 0.5,
+                        "weight_percent": 15 + i * 5
+                    })
+            else:
+                dynamic_tasks = [
+                    {
+                        "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}_1",
+                        "subject": "Core Studies",
+                        "subject_color": "#00C4CC",
+                        "title": "Module Synthesis & Concept Map Notes",
+                        "type": "Assignment",
+                        "due": "In 3 days",
+                        "due_date": (datetime.date.today() + datetime.timedelta(days=3)).isoformat(),
+                        "days_remaining": 3,
+                        "points": 100,
+                        "points_reward": 100,
+                        "status": "Pending",
+                        "verified": False,
+                        "proof_status": "pending",
+                        "proof_required": "Handwritten Notes / PDF Summary + 8-Question Teach-Back Quiz",
+                        "priority": "High",
+                        "estimated_effort_hours": 2.5,
+                        "weight_percent": 20
+                    },
+                    {
+                        "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}_2",
+                        "subject": "Analytical Lab",
+                        "subject_color": "#8B5CF6",
+                        "title": "Practice Problem Set & Algorithmic Verification",
+                        "type": "Lab Practical",
+                        "due": "In 5 days",
+                        "due_date": (datetime.date.today() + datetime.timedelta(days=5)).isoformat(),
+                        "days_remaining": 5,
+                        "points": 125,
+                        "points_reward": 125,
+                        "status": "Pending",
+                        "verified": False,
+                        "proof_status": "pending",
+                        "proof_required": "Code Commits / Lab Notes + 8-Question Teach-Back Quiz",
+                        "priority": "Critical",
+                        "estimated_effort_hours": 3.0,
+                        "weight_percent": 25
+                    }
+                ]
+            user_state["tasks"] = dynamic_tasks
+            u["tasks"] = dynamic_tasks
+            save_db(db)
+
         return jsonify(user_state)
 
     return jsonify(data)
@@ -725,15 +797,17 @@ def save_academic():
 
     if subjects:
         dynamic_tasks = []
-        for i, s in enumerate(subjects[:4]):
+        for i, s in enumerate(subjects[:5]):
+            s_name = s.get("name", "Subject")
             dynamic_tasks.append({
-                "id": f"t_{i+1}",
-                "subject": s.get("name", "Subject"),
+                "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}_{i+1}",
+                "subject": s_name,
                 "subject_color": s.get("color", "#00C4CC"),
-                "title": f"Complete {s.get('name', 'Coursework')} Problem Set & Module Review",
+                "title": f"Complete {s_name} Problem Set & Module Review",
                 "type": "Assignment" if i % 2 == 0 else "Lab Practical",
                 "due": f"In {i+2} days",
                 "due_date": (datetime.date.today() + datetime.timedelta(days=i+2)).isoformat(),
+                "days_remaining": i + 2,
                 "points": 100 + i * 25,
                 "points_reward": 100 + i * 25,
                 "status": "Pending",
@@ -741,12 +815,114 @@ def save_academic():
                 "proof_status": "pending",
                 "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
                 "priority": "Critical" if i == 0 else "High",
-                "estimated_effort_hours": 2.5 + i * 0.5
+                "estimated_effort_hours": 2.5 + i * 0.5,
+                "weight_percent": 15 + i * 5
             })
         db["tasks"] = dynamic_tasks
+        if email in db.get("registered_users", {}):
+            db["registered_users"][email]["tasks"] = dynamic_tasks
 
     save_db(db)
     return jsonify({"status": "success", "message": "Academic timetable and profile saved successfully!", "data": db})
+
+@app.route("/api/tasks/create", methods=["POST"])
+def create_student_task():
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+    title = data.get("title", "").strip()
+    subject = data.get("subject", "").strip() or "General Academic"
+    due_days = int(data.get("due_days", 3))
+    priority = data.get("priority", "High")
+    estimated_hours = float(data.get("estimated_hours", 2.0))
+    weight = int(data.get("weight", 20))
+
+    if not title:
+        return jsonify({"status": "error", "message": "Task title is required."}), 400
+
+    db = load_db()
+    if not email:
+        email = db.get("user", {}).get("email", "navinnavi8431@gmail.com")
+
+    new_task = {
+        "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}",
+        "subject": subject,
+        "subject_color": data.get("subject_color", "#00C4CC"),
+        "title": title,
+        "type": data.get("type", "Assignment"),
+        "due": f"In {due_days} days",
+        "due_date": (datetime.date.today() + datetime.timedelta(days=due_days)).isoformat(),
+        "days_remaining": due_days,
+        "points": 100,
+        "points_reward": 100,
+        "status": "Pending",
+        "verified": False,
+        "proof_status": "pending",
+        "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+        "priority": priority,
+        "estimated_effort_hours": estimated_hours,
+        "weight_percent": weight
+    }
+
+    if "tasks" not in db:
+        db["tasks"] = []
+    db["tasks"].append(new_task)
+
+    if email in db.get("registered_users", {}):
+        if "tasks" not in db["registered_users"][email]:
+            db["registered_users"][email]["tasks"] = []
+        db["registered_users"][email]["tasks"].append(new_task)
+
+    save_db(db)
+    return jsonify({"status": "success", "message": f"Task '{title}' created successfully!", "task": new_task})
+
+@app.route("/api/tasks/generate", methods=["POST"])
+def generate_student_tasks():
+    data = request.get_json() or {}
+    email = data.get("email", "").strip().lower()
+
+    db = load_db()
+    if not email:
+        email = db.get("user", {}).get("email", "navinnavi8431@gmail.com")
+
+    student_user = db.get("registered_users", {}).get(email) or db.get("user", {})
+    subjects = student_user.get("subjects") or db.get("subjects") or []
+
+    if not subjects:
+        subjects = [
+            {"name": "Computer Science Core", "color": "#00C4CC"},
+            {"name": "Data Structures & Algorithms", "color": "#8B5CF6"},
+            {"name": "Database Systems", "color": "#14B8A6"}
+        ]
+
+    dynamic_tasks = []
+    for i, s in enumerate(subjects[:5]):
+        s_name = s.get("name", "Coursework")
+        dynamic_tasks.append({
+            "id": f"t_{int(datetime.datetime.now().timestamp()*1000)}_{i+1}",
+            "subject": s_name,
+            "subject_color": s.get("color", "#00C4CC"),
+            "title": f"Complete {s_name} Problem Set & Module Review",
+            "type": "Assignment" if i % 2 == 0 else "Lab Practical",
+            "due": f"In {i+2} days",
+            "due_date": (datetime.date.today() + datetime.timedelta(days=i+2)).isoformat(),
+            "days_remaining": i + 2,
+            "points": 100 + i * 25,
+            "points_reward": 100 + i * 25,
+            "status": "Pending",
+            "verified": False,
+            "proof_status": "pending",
+            "proof_required": "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz",
+            "priority": "Critical" if i == 0 else "High",
+            "estimated_effort_hours": 2.5 + i * 0.5,
+            "weight_percent": 15 + i * 5
+        })
+
+    db["tasks"] = dynamic_tasks
+    if email in db.get("registered_users", {}):
+        db["registered_users"][email]["tasks"] = dynamic_tasks
+
+    save_db(db)
+    return jsonify({"status": "success", "message": f"Generated {len(dynamic_tasks)} verified study tasks for your subjects!", "tasks": dynamic_tasks})
 
 @app.route("/api/student/update-profile", methods=["POST"])
 def update_student_profile():
@@ -2124,41 +2300,91 @@ def run_simulation_route():
 def submit_task_proof():
     data = request.get_json() or {}
     task_id = data.get("task_id") or data.get("taskId")
-    quiz_answer = data.get("quiz_answer", "")
+    email = data.get("email", "").strip().lower()
+    filename = data.get("filename", "study_proof.pdf")
+    quiz_score = data.get("quiz_score", "8/8")
 
     db = load_db()
-    for t in db.get("tasks", []):
-        if t["id"] == task_id:
-            t["status"] = "Verified & Done"
-            t["verified"] = True
-            t["proof_status"] = "verified"
-            earned = t.get("points_reward") or t.get("points", 100)
-            t["points"] = earned
-            t["points_reward"] = earned
-            db["user"]["points"] = db["user"].get("points", 0) + earned
-            db["user"]["streak_days"] = db["user"].get("streak_days", 1) + 1
+    if not email:
+        email = db.get("user", {}).get("email", "navinnavi8431@gmail.com")
 
-            notif = {
-                "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
-                "title": f"Proof Verified: {t['title']} (+{earned} pts)",
-                "description": f"AI verified your upload and teach-back quiz with 96% conceptual accuracy.",
-                "time": "Just now",
-                "type": "reward",
-                "read": False
-            }
-            db["notifications"].insert(0, notif)
-            save_db(db)
+    # Search in registered_users tasks and root tasks
+    matched_task = None
+    all_task_lists = [db.get("tasks", [])]
+    if email in db.get("registered_users", {}):
+        all_task_lists.insert(0, db["registered_users"][email].get("tasks", []))
 
-            return jsonify({
-                "status": "success",
-                "message": f"Task verified! You earned {earned} points.",
-                "points_earned": earned,
-                "total_points": db["user"]["points"],
-                "task": t,
-                "notifications": db["notifications"]
-            })
+    for t_list in all_task_lists:
+        for t in t_list:
+            if t.get("id") == task_id:
+                matched_task = t
+                break
+        if matched_task:
+            break
 
-    return jsonify({"status": "error", "message": "Task not found"}), 404
+    if not matched_task:
+        return jsonify({"status": "error", "message": "Task not found."}), 404
+
+    earned = matched_task.get("points_reward") or matched_task.get("points", 100)
+    matched_task["status"] = "Verified & Done"
+    matched_task["verified"] = True
+    matched_task["proof_status"] = "verified"
+    matched_task["points"] = earned
+    matched_task["points_reward"] = earned
+    matched_task["verified_file"] = filename
+    matched_task["quiz_score"] = quiz_score
+    matched_task["verified_at"] = datetime.datetime.now().isoformat()
+
+    # Also sync task across both lists if present
+    for t_list in all_task_lists:
+        for t in t_list:
+            if t.get("id") == task_id:
+                t.update(matched_task)
+
+    # Award points to student
+    if email in db.get("registered_users", {}):
+        stu = db["registered_users"][email]
+        stu["points"] = stu.get("points", 100) + earned
+        stu["streak_days"] = stu.get("streak_days", 1) + 1
+        stu_points = stu["points"]
+        if "notifications" not in stu:
+            stu["notifications"] = []
+        notif = {
+            "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+            "title": f"Proof Verified: {matched_task['title']} (+{earned} pts)",
+            "description": f"Verified with uploaded artifact '{filename}' and teach-back quiz score {quiz_score}.",
+            "time": "Just now",
+            "type": "reward",
+            "read": False
+        }
+        stu["notifications"].insert(0, notif)
+    else:
+        stu_points = db.get("user", {}).get("points", 100) + earned
+
+    db.setdefault("user", {})["points"] = db.get("user", {}).get("points", 100) + earned
+    db.setdefault("user", {})["streak_days"] = db.get("user", {}).get("streak_days", 1) + 1
+
+    notif = {
+        "id": f"notif_{int(datetime.datetime.now().timestamp()*1000)}",
+        "title": f"Proof Verified: {matched_task['title']} (+{earned} pts)",
+        "description": f"Verified with uploaded artifact '{filename}' and teach-back quiz score {quiz_score}.",
+        "time": "Just now",
+        "type": "reward",
+        "read": False
+    }
+    if "notifications" not in db:
+        db["notifications"] = []
+    db["notifications"].insert(0, notif)
+
+    save_db(db)
+
+    return jsonify({
+        "status": "success",
+        "message": f"Task verified! You earned +{earned} effort points.",
+        "points_earned": earned,
+        "total_points": stu_points,
+        "task": matched_task
+    })
 
 # --- DIGITAL TWIN LEARNING ENGINE ROUTES ---
 

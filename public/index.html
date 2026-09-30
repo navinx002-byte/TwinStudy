@@ -233,6 +233,12 @@
       const [toast, setToast] = useState(null);
       const [proofModalTask, setProofModalTask] = useState(null);
       const [quizAnswer, setQuizAnswer] = useState("");
+      const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+      const [newTaskTitle, setNewTaskTitle] = useState("");
+      const [newTaskSubject, setNewTaskSubject] = useState("");
+      const [newTaskDueDays, setNewTaskDueDays] = useState(3);
+      const [newTaskPriority, setNewTaskPriority] = useState("High");
+      const [newTaskHours, setNewTaskHours] = useState(2.5);
 
       // Timetable Filter tab in dashboard
       const [scheduleFilterDay, setScheduleFilterDay] = useState("All");
@@ -1656,11 +1662,13 @@
 
         // Submit to backend
         try {
+          const userEm = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
           const res = await fetch("/api/tasks/submit-proof", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               task_id: proofModalTask.id,
+              email: userEm,
               filename: proofFile.name,
               file_size: proofFile.size,
               quiz_score: `${score}/${quizQuestions.length}`,
@@ -1703,14 +1711,70 @@
         }
       };
 
+      const handleCreateTask = async (e) => {
+        if (e) e.preventDefault();
+        if (!newTaskTitle.trim()) {
+          showNotification("Please enter a task title.");
+          return;
+        }
+        try {
+          const userEm = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
+          const res = await fetch("/api/tasks/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: userEm,
+              title: newTaskTitle.trim(),
+              subject: newTaskSubject.trim() || (state?.subjects?.[0]?.name || "Core Subject"),
+              due_days: parseInt(newTaskDueDays) || 3,
+              priority: newTaskPriority,
+              estimated_hours: parseFloat(newTaskHours) || 2.5
+            })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showNotification(data.message || "Task created!");
+            setNewTaskTitle("");
+            setShowAddTaskModal(false);
+            await fetchState();
+          } else {
+            showNotification(data.message || "Failed to create task.");
+          }
+        } catch (err) {
+          showNotification("Error creating task.");
+        }
+      };
+
+      const handleGenerateTasks = async () => {
+        try {
+          const userEm = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
+          const res = await fetch("/api/tasks/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: userEm })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showNotification(data.message || "Study tasks generated!");
+            await fetchState();
+          } else {
+            showNotification(data.message || "Failed to generate tasks.");
+          }
+        } catch (err) {
+          showNotification("Error generating tasks.");
+        }
+      };
+
       const handleVerifyProof = async () => {
         if (!proofModalTask) return;
         try {
+          const userEm = localStorage.getItem("twinstudy_user_email") || state?.user?.email || "";
           const res = await fetch("/api/tasks/submit-proof", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               task_id: proofModalTask.id,
+              email: userEm,
               proof_type: "photo_notes",
               quiz_answer: quizAnswer
             })
@@ -3810,52 +3874,108 @@
                   {/* ---------------- 7. PROOF-BASED TASKS ---------------- */}
                   {appPage === "proof" && (
                     <div className="space-y-6">
-                      <div className="border-b border-navySlate/10 pb-3 flex justify-between items-center">
+                      <div className="border-b border-navySlate/10 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
                           <h3 className="text-base font-extrabold text-navySlate">Proof-Based Task Verification</h3>
                           <p className="text-xs text-navySlate/70 font-medium">No fake checkboxes. Upload notes, code, or solve teach-back quizzes to earn points.</p>
                         </div>
-                        <span className="text-xs bg-cyanAccent/20 text-navySlate px-3 py-1 rounded-full font-bold">
-                          Total Points: {state?.user?.points || 450} pts
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleGenerateTasks}
+                            className="px-3 py-1.5 rounded-xl bg-white border border-navySlate/20 text-navySlate font-bold text-xs hover:bg-slate-50 shadow-xs flex items-center gap-1.5"
+                            title="Generate verified tasks automatically from enrolled subjects"
+                          >
+                            <span>⚡</span>
+                            <span>Auto-Generate from Subjects</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewTaskSubject(state?.subjects?.[0]?.name || "Core Studies");
+                              setShowAddTaskModal(true);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl btn-cyan text-xs font-bold shadow-xs flex items-center gap-1.5"
+                          >
+                            <span>+</span>
+                            <span>Add Study Task</span>
+                          </button>
+                          <span className="text-xs bg-cyanAccent/20 text-navySlate px-3 py-1 rounded-full font-bold">
+                            Total Points: {state?.user?.points || 100} pts
+                          </span>
+                        </div>
                       </div>
 
                       <div className="space-y-3">
                         {state?.tasks && state.tasks.length > 0 ? (
                           state.tasks.map(t => (
-                            <div key={t.id} className="glass-panel p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div key={t.id} className="glass-panel p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border border-white/60 shadow-xs">
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                   <span className="font-extrabold text-sm text-navySlate">{t.title}</span>
                                   <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${t.priority === 'Critical' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
                                     {t.priority}
                                   </span>
+                                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-navySlate/5 text-navySlate/70">
+                                    {t.subject || "Coursework"}
+                                  </span>
                                 </div>
                                 <div className="text-xs text-navySlate/70">
-                                  Due in {t.days_remaining} days • Estimated effort: {t.estimated_effort_hours}h • Weight: {t.weight_percent}%
+                                  Due in {t.days_remaining || 3} days • Estimated effort: {t.estimated_effort_hours || 2.5}h • Weight: {t.weight_percent || 20}%
                                 </div>
-                                <div className="text-xs font-semibold text-cyanHover">
-                                  Required Proof: {t.proof_required}
+                                <div className="text-xs font-semibold text-cyanHover flex items-center gap-1">
+                                  <span>📎</span>
+                                  <span>Required Proof: {t.proof_required || "Handwritten Notes / Code Commits + 8-Question Teach-Back Quiz"}</span>
                                 </div>
                               </div>
 
                               {t.proof_status !== "verified" ? (
                                 <button
+                                  type="button"
                                   onClick={() => setProofModalTask(t)}
-                                  className="px-4 py-2 rounded-xl btn-cyan text-xs font-bold shadow-sm"
+                                  className="px-4 py-2 rounded-xl btn-cyan text-xs font-bold shadow-sm whitespace-nowrap"
                                 >
                                   Submit Proof & Quiz ➔
                                 </button>
                               ) : (
                                 <span className="px-3.5 py-1.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1">
-                                  ✓ Verified Proof (+{t.points_reward} pts)
+                                  ✓ Verified Proof (+{t.points_reward || 100} pts)
                                 </span>
                               )}
                             </div>
                           ))
                         ) : (
-                          <div className="py-12 text-center text-xs text-navySlate/60 bg-white/50 rounded-2xl border border-dashed border-navySlate/20">
-                            Add your subjects in Timetable to generate dynamic verified study tasks!
+                          <div className="py-10 text-center bg-white/60 rounded-3xl border border-dashed border-navySlate/20 p-6 space-y-4 shadow-sm">
+                            <div className="w-12 h-12 rounded-2xl bg-cyanAccent/20 text-cyanHover text-2xl flex items-center justify-center mx-auto">
+                              📸
+                            </div>
+                            <div className="space-y-1">
+                              <div className="font-extrabold text-navySlate text-sm">No Active Tasks Yet</div>
+                              <p className="text-xs text-navySlate/60 max-w-md mx-auto">
+                                Generate dynamic verified study tasks from your subjects in Timetable, or create a custom task with proof upload and teach-back quiz verification.
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-3 pt-2">
+                              <button
+                                type="button"
+                                onClick={handleGenerateTasks}
+                                className="px-4 py-2 rounded-xl btn-cyan text-xs font-extrabold shadow-sm flex items-center gap-1.5"
+                              >
+                                <span>⚡</span>
+                                <span>Auto-Generate Tasks from Subjects</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNewTaskSubject(state?.subjects?.[0]?.name || "Core Studies");
+                                  setShowAddTaskModal(true);
+                                }}
+                                className="px-4 py-2 rounded-xl bg-white border border-navySlate/20 text-navySlate text-xs font-bold hover:bg-slate-50 shadow-xs flex items-center gap-1.5"
+                              >
+                                <span>+</span>
+                                <span>Create Custom Task</span>
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -5990,6 +6110,120 @@
                   </div>
                 )}
 
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* CREATE STUDY TASK MODAL                                                   */}
+          {/* ========================================================================= */}
+          {showAddTaskModal && (
+            <div className="fixed inset-0 bg-navySlate/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="glass-panel p-6 rounded-3xl max-w-md w-full space-y-4 border border-white shadow-2xl bg-white/95">
+                <div className="flex justify-between items-center border-b border-navySlate/10 pb-3">
+                  <div>
+                    <span className="text-[10px] uppercase text-cyanHover font-extrabold tracking-wider">Verified Proof Task</span>
+                    <h3 className="text-base font-extrabold text-navySlate">Create New Study Task</h3>
+                  </div>
+                  <button 
+                    onClick={() => setShowAddTaskModal(false)}
+                    className="w-8 h-8 rounded-full bg-navySlate/5 hover:bg-navySlate/10 flex items-center justify-center text-navySlate font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateTask} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block text-navySlate font-bold mb-1">Task Title *</label>
+                    <input
+                      type="text"
+                      value={newTaskTitle}
+                      onChange={(e) => setNewTaskTitle(e.target.value)}
+                      placeholder="e.g. Complete Chapter 3 Notes & Practice Problems"
+                      className="w-full px-3 py-2 rounded-xl border border-navySlate/20 text-navySlate font-medium focus:outline-none focus:border-cyanAccent"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-navySlate font-bold mb-1">Subject</label>
+                      <input
+                        type="text"
+                        value={newTaskSubject}
+                        onChange={(e) => setNewTaskSubject(e.target.value)}
+                        placeholder="e.g. DCN, Python, DBMS"
+                        className="w-full px-3 py-2 rounded-xl border border-navySlate/20 text-navySlate font-medium focus:outline-none focus:border-cyanAccent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-navySlate font-bold mb-1">Due In (Days)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        value={newTaskDueDays}
+                        onChange={(e) => setNewTaskDueDays(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-navySlate/20 text-navySlate font-medium focus:outline-none focus:border-cyanAccent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-navySlate font-bold mb-1">Priority</label>
+                      <select
+                        value={newTaskPriority}
+                        onChange={(e) => setNewTaskPriority(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-navySlate/20 text-navySlate font-medium bg-white focus:outline-none focus:border-cyanAccent"
+                      >
+                        <option value="Critical">Critical</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-navySlate font-bold mb-1">Estimated Hours</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        max="20"
+                        value={newTaskHours}
+                        onChange={(e) => setNewTaskHours(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl border border-navySlate/20 text-navySlate font-medium focus:outline-none focus:border-cyanAccent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-cyanAccent/10 border border-cyanAccent/20 text-navySlate/80 text-[11px] space-y-1">
+                    <div className="font-bold text-navySlate flex items-center gap-1">
+                      <span>📸</span>
+                      <span>Proof-Based Verification Policy</span>
+                    </div>
+                    <p>
+                      Completing this task requires uploading your handwritten notes, PDF summary, or code file, followed by solving an 8-question Teach-Back Quiz (+100 pts reward).
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddTaskModal(false)}
+                      className="flex-1 py-2 rounded-xl bg-navySlate/5 hover:bg-navySlate/10 text-navySlate font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 rounded-xl btn-cyan font-bold shadow-sm"
+                    >
+                      Create Task ➔
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
