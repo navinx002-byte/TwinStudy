@@ -40,7 +40,7 @@ pip install -r requirements.txt
 python server.py
 ```
 
-Open your browser at **[http://localhost:5000](http://localhost:5000)**.
+Open your browser at **https://twin-study.vercel.app/**.
 
 ---
 
