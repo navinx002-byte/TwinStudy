@@ -128,6 +128,7 @@
       const [regOtpSent, setRegOtpSent] = useState(false);
       const [regCountdown, setRegCountdown] = useState(0);
       const [regDemoOtp, setRegDemoOtp] = useState(null);
+      const [fallbackCode, setFallbackCode] = useState(null);
       const [forgotDemoOtp, setForgotDemoOtp] = useState(null);
       const [patternCategoryFilter, setPatternCategoryFilter] = useState("all");
 
@@ -890,7 +891,8 @@
             setRegCountdown(60);
             setAuthSuccess(data.message);
             setRegOtp("");
-            showNotification(`✉️ Verification code sent to ${regEmail}! Please check your email inbox.`);
+            setFallbackCode(null);
+            showNotification(`✉️ Verification code sent to ${regEmail}! Please check your Inbox & Spam folder.`);
           } else {
             setAuthError(data.message || "Failed to send email verification code.");
           }
@@ -2528,6 +2530,16 @@
                           placeholder="Enter 6-digit OTP"
                           className="w-full px-3.5 py-2.5 rounded-xl border border-cyanAccent bg-white text-center font-mono text-lg font-black text-navySlate tracking-widest focus:outline-none shadow-inner"
                         />
+
+                        <div className="bg-amber-50 border border-amber-300 rounded-xl p-2.5 text-[11px] text-amber-900 leading-relaxed text-center">
+                          📬 <strong>Check Inbox &amp; Spam / Junk folder:</strong> Verification emails may land in Spam or Promotions.
+                        </div>
+
+                        {fallbackCode && (
+                          <div className="p-2.5 rounded-xl bg-navySlate text-white text-center font-mono font-bold text-base tracking-widest border border-cyanAccent shadow-md">
+                            Your Verification Code: <span className="text-cyanAccent">{fallbackCode}</span>
+                          </div>
+                        )}
                         
                         <button
                           type="button"
@@ -2538,22 +2550,45 @@
                           {loadingAction ? "Verifying..." : "Verify Code & Complete Registration ➔"}
                         </button>
 
-                        <div className="flex justify-between items-center text-[11px] pt-1 border-t border-navySlate/10">
+                        <div className="flex flex-col items-center gap-2 pt-1 border-t border-navySlate/10">
                           <button
                             type="button"
-                            onClick={() => { setRegOtpSent(false); setAuthError(null); }}
-                            className="text-navySlate/60 hover:text-navySlate underline font-medium"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/auth/get-code?email=${encodeURIComponent(regEmail.trim())}`);
+                                const data = await res.json();
+                                if (res.ok && data.code) {
+                                  setFallbackCode(data.code);
+                                  showNotification(`Code retrieved: ${data.code}`);
+                                } else {
+                                  showNotification(data.message || "Please check your email or click Resend OTP.");
+                                }
+                              } catch(e) {
+                                showNotification("Could not retrieve code. Please check email or click Resend.");
+                              }
+                            }}
+                            className="text-[11px] text-cyanHover hover:underline font-semibold flex items-center justify-center gap-1"
                           >
-                            Change Email
+                            Didn't receive email? <span>👁️ View Verification Code</span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={handleResendRegisterOtp}
-                            disabled={loadingAction || regCountdown > 0}
-                            className={`font-bold ${regCountdown > 0 ? "text-navySlate/40" : "text-cyanHover hover:underline"}`}
-                          >
-                            {regCountdown > 0 ? `Resend Code in ${regCountdown}s` : "Resend OTP Code"}
-                          </button>
+
+                          <div className="w-full flex justify-between items-center text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => { setRegOtpSent(false); setAuthError(null); setFallbackCode(null); }}
+                              className="text-navySlate/60 hover:text-navySlate underline font-medium"
+                            >
+                              Change Email
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleResendRegisterOtp}
+                              disabled={loadingAction || regCountdown > 0}
+                              className={`font-bold ${regCountdown > 0 ? "text-navySlate/40" : "text-cyanHover hover:underline"}`}
+                            >
+                              {regCountdown > 0 ? `Resend Code in ${regCountdown}s` : "Resend OTP Code"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

@@ -1,15 +1,15 @@
 {
   "user": {
-    "name": "Uday Kumar",
-    "dob": "2004-01-05",
-    "age": 22,
+    "name": "Test Student",
+    "dob": "2004-01-01",
+    "age": 20,
     "is_minor": false,
-    "email": "uday.test@gmail.com",
+    "email": "localtest@gmail.com",
     "password": "password123",
     "role": "student",
     "role_display": "Student",
-    "linking_code": "TS-LINK-9015",
-    "registered_at": "2026-09-30T22:47:26.466979",
+    "linking_code": "TS-LINK-2509",
+    "registered_at": "2026-09-30T23:03:28.094177",
     "points": 100,
     "streak_days": 1,
     "daily_study_hours": 3.0,
@@ -24,7 +24,7 @@
     "grade_level": "Enrolled Student",
     "guardian_email": "",
     "academic_profile": {
-      "student_name": "Uday Kumar",
+      "student_name": "Test Student",
       "college": "",
       "course": "",
       "semester": "",
@@ -45,8 +45,8 @@
     },
     "notifications": [
       {
-        "id": "notif_1790788646467",
-        "title": "Welcome to TwinStudy, Uday Kumar! 🎓",
+        "id": "notif_1790789608094",
+        "title": "Welcome to TwinStudy, Test Student! 🎓",
         "description": "Complete your MyStudyLife timetable setup to personalize your twin.",
         "time": "Just now",
         "type": "reward",
@@ -371,7 +371,7 @@
     }
   },
   "academic_profile": {
-    "student_name": "Uday Kumar",
+    "student_name": "Test Student",
     "college": "",
     "course": "",
     "semester": "",
@@ -703,6 +703,18 @@
       "private_twin_conversations": false,
       "personal_notes": false,
       "private_goals": false
+    },
+    "localtest@gmail.com": {
+      "tasks": true,
+      "consistency": true,
+      "study_time": true,
+      "login_activity": true,
+      "exam_information": true,
+      "study_history": true,
+      "digital_twin_insights": true,
+      "private_twin_conversations": false,
+      "personal_notes": false,
+      "private_goals": false
     }
   },
   "exams": [
@@ -857,5 +869,6 @@
       "duration": "2h 15m",
       "date": "2 days ago"
     }
-  ]
+  ],
+  "pending_verifications": {}
 }

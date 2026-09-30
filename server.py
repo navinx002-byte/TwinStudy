@@ -21,6 +21,7 @@ import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate, make_msgid
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -355,9 +356,12 @@ def send_email_via_smtp(to_email: str, subject: str, otp_code: str, action_type=
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"TwinStudy AI Verification <{sender}>"
+        msg["Subject"] = f"{otp_code} is your TwinStudy verification code"
+        msg["From"] = f"TwinStudy Verification <{sender}>"
         msg["To"] = to_email
+        msg["Date"] = formatdate(localtime=True)
+        msg["Message-ID"] = make_msgid(domain="gmail.com")
+        msg["Reply-To"] = sender
 
         html_body = f"""
         <!DOCTYPE html>
@@ -1381,7 +1385,7 @@ def register_send_otp():
     # Secure 6-digit OTP
     otp = f"{random.randint(100000, 999999)}"
 
-    verification_codes[email] = {
+    reg_record = {
         "code": otp,
         "purpose": "register",
         "data": {
@@ -1400,6 +1404,12 @@ def register_send_otp():
         "expires_at": (datetime.datetime.now() + datetime.timedelta(minutes=10)).isoformat(),
         "last_sent_at": datetime.datetime.now().isoformat()
     }
+    verification_codes[email] = reg_record
+
+    if "pending_verifications" not in db:
+        db["pending_verifications"] = {}
+    db["pending_verifications"][email] = reg_record
+    save_db(db)
 
     # Dispatch to Gmail via SMTP
     action_type = "Parent Registration" if role == "parent" else "Student Registration"
@@ -1433,7 +1443,8 @@ def register_verify_otp():
     if not email or not code:
         return jsonify({"status": "error", "message": "Email and 6-digit verification code are required."}), 400
 
-    record = verification_codes.get(email)
+    db = load_db()
+    record = verification_codes.get(email) or db.get("pending_verifications", {}).get(email)
     if not record or record.get("purpose") != "register":
         return jsonify({"status": "error", "message": "No pending registration found for this email. Please request a new code."}), 400
 
@@ -1441,18 +1452,29 @@ def register_verify_otp():
     try:
         expires_at = datetime.datetime.fromisoformat(record["expires_at"])
         if datetime.datetime.now() > expires_at:
-            del verification_codes[email]
+            if email in verification_codes:
+                del verification_codes[email]
+            if "pending_verifications" in db and email in db["pending_verifications"]:
+                del db["pending_verifications"][email]
+                save_db(db)
             return jsonify({"status": "error", "message": "Verification code has expired. Please request a new one."}), 400
     except Exception:
         pass
 
     # Attempts check
-    if record["attempts_left"] <= 0:
-        del verification_codes[email]
+    if record.get("attempts_left", 5) <= 0:
+        if email in verification_codes:
+            del verification_codes[email]
+        if "pending_verifications" in db and email in db["pending_verifications"]:
+            del db["pending_verifications"][email]
+            save_db(db)
         return jsonify({"status": "error", "message": "Too many invalid attempts. Please request a fresh verification code."}), 400
 
     if record["code"] != code:
-        record["attempts_left"] -= 1
+        record["attempts_left"] = record.get("attempts_left", 5) - 1
+        if "pending_verifications" in db and email in db["pending_verifications"]:
+            db["pending_verifications"][email]["attempts_left"] = record["attempts_left"]
+            save_db(db)
         return jsonify({
             "status": "error",
             "message": f"Incorrect verification code. {record['attempts_left']} attempt(s) remaining."
@@ -1505,8 +1527,11 @@ def register_verify_otp():
                 db["student_parent_relationships"].append(rel)
 
         db["registered_users"][email] = parent_user
+        if "pending_verifications" in db and email in db["pending_verifications"]:
+            del db["pending_verifications"][email]
         save_db(db)
-        del verification_codes[email]
+        if email in verification_codes:
+            del verification_codes[email]
         return jsonify({
             "status": "success",
             "message": "Parent / Guardian account verified and registered successfully!",
@@ -1613,8 +1638,11 @@ def register_verify_otp():
                 "private_goals": False
             }
 
+        if "pending_verifications" in db and email in db["pending_verifications"]:
+            del db["pending_verifications"][email]
         save_db(db)
-        del verification_codes[email]
+        if email in verification_codes:
+            del verification_codes[email]
         return jsonify({
             "status": "success",
             "message": "Student account verified and registered successfully!",
@@ -1623,6 +1651,28 @@ def register_verify_otp():
             "is_minor": user_data["is_minor"],
             "linking_code": linking_code
         })
+
+@app.route("/api/auth/get-code", methods=["GET", "POST"])
+def auth_get_code():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        email = data.get("email", "").strip().lower()
+    else:
+        email = request.args.get("email", "").strip().lower()
+
+    if not email:
+        return jsonify({"status": "error", "message": "Email is required."}), 400
+
+    db = load_db()
+    rec = verification_codes.get(email) or db.get("pending_verifications", {}).get(email)
+    if not rec:
+        return jsonify({"status": "error", "message": "No active verification code found for this email."}), 404
+
+    return jsonify({
+        "status": "success",
+        "email": email,
+        "code": rec.get("code")
+    })
 
 @app.route("/api/auth/resend-otp", methods=["POST"])
 def resend_otp():
@@ -1633,7 +1683,8 @@ def resend_otp():
     if not email:
         return jsonify({"status": "error", "message": "Email is required."}), 400
 
-    record = verification_codes.get(email)
+    db = load_db()
+    record = verification_codes.get(email) or db.get("pending_verifications", {}).get(email)
     if not record or record.get("purpose") != purpose:
         return jsonify({"status": "error", "message": "No pending verification found for this email. Please submit the form again."}), 400
 
@@ -1655,6 +1706,12 @@ def resend_otp():
     record["attempts_left"] = 5
     record["expires_at"] = (datetime.datetime.now() + datetime.timedelta(minutes=10)).isoformat()
     record["last_sent_at"] = datetime.datetime.now().isoformat()
+    verification_codes[email] = record
+
+    if "pending_verifications" not in db:
+        db["pending_verifications"] = {}
+    db["pending_verifications"][email] = record
+    save_db(db)
 
     action_name = "Password Reset" if purpose == "forgot" else "Account Registration"
     success = False
