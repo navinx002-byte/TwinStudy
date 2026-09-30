@@ -2446,7 +2446,9 @@
 
                 {authError && (
                   <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-700 text-xs font-medium space-y-1">
-                    <div className="font-bold flex items-center gap-1">⚠️ Registration Notice:</div>
+                    <div className="font-bold flex items-center gap-1">
+                      ⚠️ {authTab === "login" ? "Sign-In Notice:" : (authTab === "forgot" ? "Reset Notice:" : "Registration Notice:")}
+                    </div>
                     <div>{authError}</div>
                   </div>
                 )}
