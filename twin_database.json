@@ -8,8 +8,8 @@
     "is_minor": true,
     "role": "student_minor",
     "role_display": "Student (Minor)",
-    "points": 475,
-    "streak_days": 4,
+    "points": 650,
+    "streak_days": 5,
     "daily_study_hours": 3.0,
     "focus_duration_minutes": 45,
     "learning_preference": "Practice problems and step-by-step review",
@@ -118,9 +118,17 @@
         }
       ],
       "role": "student",
-      "points": 475,
-      "streak_days": 4,
+      "points": 650,
+      "streak_days": 5,
       "notifications": [
+        {
+          "id": "notif_1790824769498",
+          "title": "Proof Verified: Complete python Problem Set & Module Review (+175 pts)",
+          "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+          "time": "Just now",
+          "type": "reward",
+          "read": false
+        },
         {
           "id": "notif_1790802071789",
           "title": "Proof Verified: Complete erj Problem Set & Module Review (+150 pts)",
@@ -356,7 +364,7 @@
       "name": "akash",
       "email": "navin.d2942@gmail.com",
       "password": "1111",
-      "role": "parent",
+      "role": "student",
       "role_display": "Parent / Guardian",
       "registered_at": "2026-09-30T20:01:11.454029",
       "linked_student_email": "navin.x002@gmail.com"
@@ -365,7 +373,7 @@
       "name": "akash",
       "email": "apex88266@gmail.com",
       "password": "1111",
-      "role": "parent",
+      "role": "student",
       "role_display": "Parent / Guardian",
       "registered_at": "2026-09-30T21:09:32.494698",
       "linked_student_email": "navin.x002@gmail.com"
@@ -544,6 +552,14 @@
     "allow_nudges": true
   },
   "notifications": [
+    {
+      "id": "notif_1790824769498",
+      "title": "Proof Verified: Complete python Problem Set & Module Review (+175 pts)",
+      "description": "Verified with uploaded artifact 'dcn_study_notes.pdf' and teach-back quiz score 8/8.",
+      "time": "Just now",
+      "type": "reward",
+      "read": false
+    },
     {
       "id": "notif_1790802071789",
       "title": "Proof Verified: Complete erj Problem Set & Module Review (+150 pts)",
@@ -1047,6 +1063,14 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "act_1790824754831",
+      "user_email": "navinnavi8431@gmail.com",
+      "login_time": "08:49 AM",
+      "logout_time": "Active Now",
+      "duration": "In Progress",
+      "date": "Today"
+    },
     {
       "id": "act_1790802057427",
       "user_email": "navinnavi8431@gmail.com",

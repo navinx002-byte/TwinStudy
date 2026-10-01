@@ -383,8 +383,24 @@
 
       useEffect(() => {
         const bootstrapAuth = async () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const forceStudent = urlParams.get("view") === "app" || urlParams.get("role") === "student" || urlParams.get("dashboard") === "student";
+          const forceParent = urlParams.get("view") === "parent" || urlParams.get("portal") === "parent";
+
           const token = localStorage.getItem("twinstudy_auth_token");
           const storedEmail = localStorage.getItem("twinstudy_user_email");
+          const storedRole = localStorage.getItem("twinstudy_user_role");
+
+          if (forceStudent) {
+            setUserRole("student");
+            localStorage.setItem("twinstudy_user_role", "student");
+            setView("app");
+            setAppPage("dashboard");
+            await fetchState(storedEmail || undefined);
+            await fetchStudentParentSettings();
+            checkSmtpStatus();
+            return;
+          }
 
           if (token || storedEmail) {
             try {
@@ -398,15 +414,22 @@
                 const data = await res.json();
                 if (data.status === "success" && data.user) {
                   const role = data.role || data.user.role || "student";
-                  setUserRole(role);
-                  localStorage.setItem("twinstudy_user_role", role);
-                  localStorage.setItem("twinstudy_user_email", data.user.email);
-                  if (role === "parent") {
+                  
+                  // Only go to parent dashboard if explicitly requested or storedRole is parent and role is parent
+                  if ((forceParent || storedRole === "parent") && role === "parent") {
+                    setUserRole("parent");
+                    localStorage.setItem("twinstudy_user_role", "parent");
+                    localStorage.setItem("twinstudy_user_email", data.user.email);
                     setParentUser(data.user);
                     setView("parent_dashboard");
                     await fetchParentDashboard(data.user.email);
                   } else {
+                    // Default to normal student dashboard
+                    setUserRole("student");
+                    localStorage.setItem("twinstudy_user_role", "student");
+                    localStorage.setItem("twinstudy_user_email", data.user.email);
                     setView("app");
+                    setAppPage("dashboard");
                     await fetchState(data.user.email);
                     await fetchStudentParentSettings();
                   }
@@ -2923,9 +2946,36 @@
                         <span className="text-[10px] text-cyanHover font-bold block -mt-0.5">Student Cockpit</span>
                       </div>
                     </div>
-                    <button onClick={() => setView("landing")} className="text-[10px] text-navySlate/60 hover:text-navySlate font-bold">
-                      Exit
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setView("landing")} className="text-[10px] text-navySlate/60 hover:text-navySlate font-bold" title="Return to home landing">
+                        Home
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const tok = localStorage.getItem("twinstudy_auth_token");
+                            if (tok) {
+                              await fetch("/api/auth/logout", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` }
+                              });
+                            }
+                          } catch (e) {}
+                          localStorage.removeItem("twinstudy_auth_token");
+                          localStorage.removeItem("twinstudy_user_email");
+                          localStorage.removeItem("twinstudy_user_role");
+                          localStorage.removeItem("twinstudy_parent_approved");
+                          setUserRole("student");
+                          setView("landing");
+                          showNotification("Signed out successfully.");
+                        }}
+                        className="text-[10px] text-rose-500 hover:text-rose-700 font-bold"
+                        title="Sign out of student account"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
 
                   {/* Clean Student Navigation */}
@@ -4847,6 +4897,22 @@
 
                   <button
                     type="button"
+                    onClick={() => {
+                      setUserRole("student");
+                      localStorage.setItem("twinstudy_user_role", "student");
+                      setView("app");
+                      setAppPage("dashboard");
+                      fetchState();
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-cyanAccent to-cyanHover text-navySlate font-extrabold text-xs hover:shadow-md transition shadow-xs flex items-center gap-1.5"
+                    title="Switch directly to Student Cockpit / Normal Dashboard"
+                  >
+                    <span>🎓</span>
+                    <span>Student Dashboard</span>
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => fetchParentDashboard()}
                     className="px-3 py-1.5 rounded-xl bg-white border border-navySlate/15 text-navySlate font-bold text-xs hover:bg-slate-50 shadow-xs flex items-center gap-1.5"
                   >
@@ -4856,13 +4922,24 @@
 
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
+                      try {
+                        const tok = localStorage.getItem("twinstudy_auth_token");
+                        if (tok) {
+                          await fetch("/api/auth/logout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${tok}` }
+                          });
+                        }
+                      } catch (e) {}
+                      localStorage.removeItem("twinstudy_auth_token");
+                      localStorage.removeItem("twinstudy_user_email");
                       localStorage.removeItem("twinstudy_user_role");
                       localStorage.removeItem("twinstudy_parent_approved");
                       setParentUser(null);
-                      setView("landing");
-                      setParentDashboardData(null);
                       setUserRole("student");
+                      setParentDashboardData(null);
+                      setView("landing");
                       showNotification("Signed out of Parent Portal.");
                     }}
                     className="px-3 py-1.5 rounded-xl bg-navySlate text-white font-bold text-xs hover:bg-navySlate/90 shadow-xs flex items-center gap-1.5"
@@ -4898,13 +4975,28 @@
                         <p className="text-[11px] leading-relaxed">
                           Your link request for <strong>{parentDashboardData.student_name || "Student"}</strong> has been sent! Please ask your child to open their <strong>Student Cockpit ➔ Profile & Settings</strong> and click <strong>"Approve Access"</strong>.
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => fetchParentDashboard()}
-                          className="w-full mt-2 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700"
-                        >
-                          Check Approval Status 🔄
-                        </button>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => fetchParentDashboard()}
+                            className="flex-1 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs hover:bg-amber-700"
+                          >
+                            Check Approval Status 🔄
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserRole("student");
+                              localStorage.setItem("twinstudy_user_role", "student");
+                              setView("app");
+                              setAppPage("dashboard");
+                              fetchState();
+                            }}
+                            className="px-3 py-2 rounded-xl bg-navySlate text-white font-bold text-xs hover:bg-navySlate/90"
+                          >
+                            🎓 Student Mode
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-3 text-left">
@@ -4930,6 +5022,24 @@
                         <p className="text-[11px] text-navySlate/60">
                           💡 Your child can find their linking code under <strong>Profile & Settings ➔ Parent / Guardian Oversight</strong> in their student account.
                         </p>
+
+                        <div className="pt-4 mt-2 border-t border-navySlate/10 flex flex-col items-center justify-center gap-2">
+                          <span className="text-[11px] text-navySlate/60 font-medium">Looking for your student cockpit instead?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserRole("student");
+                              localStorage.setItem("twinstudy_user_role", "student");
+                              setView("app");
+                              setAppPage("dashboard");
+                              fetchState();
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-navySlate to-slate-800 text-white font-extrabold text-xs hover:from-slate-800 hover:to-navySlate transition shadow-sm flex items-center justify-center gap-2"
+                          >
+                            <span>🎓</span>
+                            <span>Open Normal Student Dashboard</span>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
